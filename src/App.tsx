@@ -146,7 +146,7 @@ export default function App() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
+      <BrowserRouter basename="/Ourchive">
         <TooltipProvider>
           <AuthProvider>
             <AppRoutes />
