@@ -35,7 +35,7 @@ export function LoginPage() {
             Ourchive
           </CardTitle>
           <p className="text-sm text-muted-foreground">
-            Your shared media tracker
+            Like "archive" but only for our
           </p>
         </CardHeader>
         <CardContent>
