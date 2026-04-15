@@ -1,6 +1,12 @@
 import { Link } from "react-router-dom";
 import { Film, Tv, BookOpen, Disc3 } from "lucide-react";
 import { Card } from "@/components/ui/card";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+} from "@/components/ui/tooltip";
 import { RatingStars } from "./RatingStars";
 import { StatusBadge } from "./StatusBadge";
 import type { Media, Entry, Profile, MediaType } from "@/types";
@@ -102,7 +108,7 @@ export function MediaCard({
 
             <div className="mt-2 flex flex-wrap items-center justify-between gap-1">
               {entry && (
-                <StatusBadge status={entry.status} ownership={entry.ownership} />
+                <StatusBadge status={entry.status} ownership={entry.ownership} mediaType={media.media_type} />
               )}
               {entry?.rating != null && (
                 <RatingStars rating={entry.rating} size="sm" />
@@ -110,9 +116,28 @@ export function MediaCard({
             </div>
 
             {showUser && profile && (
-              <p className="mt-1 text-xs text-muted-foreground truncate">
-                {profile.display_name}
-              </p>
+              <div className="mt-1">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="inline-block">
+                      <Avatar className="h-5 w-5">
+                        {profile.avatar_url && (
+                          <AvatarImage src={profile.avatar_url} alt={profile.display_name} />
+                        )}
+                        <AvatarFallback className="text-[8px] bg-primary/20 text-primary">
+                          {profile.display_name
+                            ?.split(" ")
+                            .map((n) => n[0])
+                            .join("")
+                            .slice(0, 2)
+                            .toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent>{profile.display_name}</TooltipContent>
+                </Tooltip>
+              </div>
             )}
           </div>
         </div>

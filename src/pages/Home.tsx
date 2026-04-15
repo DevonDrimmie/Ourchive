@@ -116,16 +116,25 @@ function FeedCard({ entry }: { entry: FeedEntry }) {
   return (
     <div>
       <div className="flex items-center gap-2 mb-2">
-        <Avatar className="h-5 w-5">
-          {profile.avatar_url && (
-            <AvatarImage src={profile.avatar_url} alt={profile.display_name} />
-          )}
-          <AvatarFallback className="text-[9px] bg-primary/20 text-primary">
-            {initials}
-          </AvatarFallback>
-        </Avatar>
+        <Link to={`/profile/${profile.id}`} className="shrink-0">
+          <Avatar className="h-5 w-5 hover:opacity-80 transition-opacity">
+            {profile.avatar_url && (
+              <AvatarImage src={profile.avatar_url} alt={profile.display_name} />
+            )}
+            <AvatarFallback className="text-[9px] bg-primary/20 text-primary">
+              {initials}
+            </AvatarFallback>
+          </Avatar>
+        </Link>
         <p className="text-sm text-foreground flex-1 truncate">
-          {getActionText(entry, media, profile)}
+          <Link
+            to={`/profile/${profile.id}`}
+            className="font-medium hover:underline underline-offset-2"
+          >
+            {profile.display_name}
+          </Link>
+          {" "}
+          {getActionText(entry, media, profile).replace(profile.display_name, "").trimStart()}
         </p>
         <span className="text-xs text-muted-foreground shrink-0">
           {timeAgo}

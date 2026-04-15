@@ -1,11 +1,12 @@
 import { Badge } from "@/components/ui/badge";
 import { Package, Eye, Clock, Bookmark, Disc3, Monitor, Ban } from "lucide-react";
-import type { EntryStatus, OwnershipStatus } from "@/types";
+import type { EntryStatus, OwnershipStatus, MediaType } from "@/types";
 import { cn } from "@/lib/utils";
 
 interface StatusBadgeProps {
   status: EntryStatus;
   ownership?: OwnershipStatus;
+  mediaType?: MediaType;
   className?: string;
 }
 
@@ -19,6 +20,12 @@ const statusConfig: Record<
   dnf: { label: "DNF", icon: Ban, variant: "outline" },
 };
 
+const completedLabels: Partial<Record<MediaType, string>> = {
+  movie: "Watched",
+  tv: "Watched",
+  book: "Read",
+};
+
 const ownershipConfig: Record<
   OwnershipStatus,
   { label: string; icon: typeof Package } | null
@@ -29,17 +36,26 @@ const ownershipConfig: Record<
   digital: { label: "Digital", icon: Monitor },
 };
 
-export function StatusBadge({ status, ownership, className }: StatusBadgeProps) {
+export function StatusBadge({ status, ownership, mediaType, className }: StatusBadgeProps) {
   const config = statusConfig[status];
   const Icon = config.icon;
   const ownConfig = ownership ? ownershipConfig[ownership] : null;
 
+  const hideStatus = mediaType === "record";
+
+  const label =
+    status === "completed" && mediaType
+      ? completedLabels[mediaType] ?? config.label
+      : config.label;
+
   return (
     <div className={cn("flex flex-wrap items-center gap-1", className)}>
-      <Badge variant={config.variant} className="gap-1 text-xs">
-        <Icon className="h-3 w-3" />
-        {config.label}
-      </Badge>
+      {!hideStatus && (
+        <Badge variant={config.variant} className="gap-1 text-xs">
+          <Icon className="h-3 w-3" />
+          {label}
+        </Badge>
+      )}
       {ownConfig && (
         <Badge variant="outline" className="gap-1 text-xs">
           <ownConfig.icon className="h-3 w-3" />

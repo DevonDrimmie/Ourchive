@@ -173,6 +173,42 @@ function AppRoutes() {
         }
       />
       <Route
+        path="/collection/movies"
+        element={
+          <ProtectedRoute>
+            <Header />
+            <CollectionPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/collection/tv"
+        element={
+          <ProtectedRoute>
+            <Header />
+            <CollectionPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/collection/books"
+        element={
+          <ProtectedRoute>
+            <Header />
+            <CollectionPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/collection/records"
+        element={
+          <ProtectedRoute>
+            <Header />
+            <CollectionPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/profile/:id"
         element={
           <ProtectedRoute>

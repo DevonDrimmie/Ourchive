@@ -143,6 +143,7 @@ export function MediaDetailPage() {
                     <StatusBadge
                       status={entry.status as EntryStatus}
                       ownership={entry.ownership}
+                      mediaType={media.media_type as MediaType}
                       className="mb-2"
                     />
 
