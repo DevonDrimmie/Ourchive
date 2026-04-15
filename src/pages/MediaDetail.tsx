@@ -60,7 +60,11 @@ export function MediaDetailPage() {
           src={media.cover_url}
           alt={media.title}
           mediaType={media.media_type}
-          className="h-72 w-48 shrink-0 mx-auto sm:mx-0"
+          className={
+            media.media_type === "record"
+              ? "h-64 w-64 shrink-0 mx-auto sm:mx-0"
+              : "h-72 w-48 shrink-0 mx-auto sm:mx-0"
+          }
         />
 
         <div className="flex-1 space-y-3">

@@ -123,7 +123,11 @@ export function SearchPage() {
                     src={result.cover_url}
                     alt={result.title}
                     mediaType={result.media_type}
-                    className="h-20 w-14 shrink-0"
+                    className={
+                      result.media_type === "record"
+                        ? "h-16 w-16 shrink-0"
+                        : "h-20 w-14 shrink-0"
+                    }
                   />
 
                   <div className="min-w-0 flex-1">

@@ -88,7 +88,11 @@ export function EntryDialog({
             src={result.cover_url}
             alt={result.title}
             mediaType={result.media_type}
-            className="h-32 w-22 flex-shrink-0"
+            className={
+              result.media_type === "record"
+                ? "h-24 w-24 shrink-0"
+                : "h-32 w-22 shrink-0"
+            }
           />
           <div className="min-w-0">
             <h3 className="font-semibold leading-tight">{result.title}</h3>

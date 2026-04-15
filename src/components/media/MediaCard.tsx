@@ -45,13 +45,20 @@ export function MediaCard({
         )}
       >
         <div className="flex gap-3 p-3">
-          <div className="relative h-28 w-20 flex-shrink-0 overflow-hidden rounded-md bg-muted">
+          <div
+            className={cn(
+              "relative flex-shrink-0 overflow-hidden rounded-md bg-muted",
+              media.media_type === "record" ? "h-24 w-24" : "h-28 w-20"
+            )}
+          >
             {media.cover_url ? (
               <img
                 src={media.cover_url}
                 alt={media.title}
                 className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-105"
                 loading="lazy"
+                referrerPolicy="no-referrer"
+                crossOrigin="anonymous"
               />
             ) : (
               <div className="flex h-full w-full items-center justify-center">

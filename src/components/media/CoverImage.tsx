@@ -37,6 +37,8 @@ export function CoverImage({
           alt={alt}
           className="h-full w-full object-cover"
           loading="lazy"
+          referrerPolicy="no-referrer"
+          crossOrigin="anonymous"
           onError={(e) => {
             e.currentTarget.style.display = "none";
             e.currentTarget.nextElementSibling?.classList.remove("hidden");
