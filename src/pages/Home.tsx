@@ -229,7 +229,7 @@ export function HomePage() {
           <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
         </div>
       ) : entries && entries.length > 0 ? (
-        <div className="mt-4 flex flex-col gap-3 max-w-xl mx-auto">
+        <div className="mt-4 flex flex-col gap-3">
           {entries.map((entry: FeedEntry) => (
             <FeedCard key={entry.id} entry={entry} />
           ))}

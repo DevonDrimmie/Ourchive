@@ -1,7 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
-  Home,
   LogOut,
   User,
   Library,
@@ -207,7 +206,6 @@ function MobileNavLinks({ onClick }: { onClick?: () => void }) {
   const { data: profiles } = useProfiles();
 
   const items = [
-    { to: "/", icon: Home, label: "Home" },
     { to: "/collection", icon: Library, label: "Collection" },
   ];
 
@@ -259,15 +257,12 @@ function MobileNavLinks({ onClick }: { onClick?: () => void }) {
 export function Header() {
   const { user, profile, signOut } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
   const initials = profile?.display_name
     ?.split(" ")
     .map((n) => n[0])
     .join("")
     .slice(0, 2)
     .toUpperCase();
-
-  const isHome = location.pathname === "/" || ["/movies", "/tv", "/books", "/records"].includes(location.pathname);
 
   return (
     <header className="sticky top-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-xl">
@@ -297,19 +292,6 @@ export function Header() {
             <span className="text-lg font-bold tracking-tight hidden sm:inline">
               Ourchive
             </span>
-          </Link>
-
-          <Link
-            to="/"
-            className={cn(
-              "hidden md:flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-sm font-medium transition-colors",
-              isHome
-                ? "bg-accent text-accent-foreground"
-                : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-            )}
-          >
-            <Home className="h-3.5 w-3.5" />
-            Home
           </Link>
         </div>
 
