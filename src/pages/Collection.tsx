@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -8,7 +8,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { MediaCard } from "@/components/media/MediaCard";
+import { BlendedMediaCard } from "@/components/media/BlendedMediaCard";
 import { PageShell } from "@/components/layout/PageShell";
 import { useCollection, useProfiles } from "@/lib/hooks/useEntries";
 import { Loader2 } from "lucide-react";
@@ -66,6 +66,44 @@ export function CollectionPage() {
     const tab = typeFilters.find((f) => f.value === value);
     if (tab) navigate(tab.path);
   };
+
+  type CollectionRow = Entry & { media: Media; profiles: Profile };
+
+  const groupedByMedia = useMemo(() => {
+    if (!entries?.length) return [];
+    const map = new Map<string, CollectionRow[]>();
+    for (const entry of entries as CollectionRow[]) {
+      const mid = entry.media.id;
+      if (!map.has(mid)) map.set(mid, []);
+      map.get(mid)!.push(entry);
+    }
+    const groups = Array.from(map.values());
+
+    function maxRating(gs: CollectionRow[]): number {
+      const nums = gs.map((e) => e.rating).filter((r): r is number => r != null);
+      if (nums.length === 0) return -1;
+      return Math.max(...nums);
+    }
+
+    groups.sort((a, b) => {
+      const ma = a[0]!.media;
+      const mb = b[0]!.media;
+      if (sortBy === "title") {
+        return ma.title.localeCompare(mb.title, undefined, { sensitivity: "base" });
+      }
+      if (sortBy === "rating") {
+        const ra = maxRating(a);
+        const rb = maxRating(b);
+        if (ra !== rb) return rb - ra;
+        return ma.title.localeCompare(mb.title, undefined, { sensitivity: "base" });
+      }
+      const da = Math.max(...a.map((e) => new Date(e.updated_at).getTime()));
+      const db = Math.max(...b.map((e) => new Date(e.updated_at).getTime()));
+      return db - da;
+    });
+
+    return groups;
+  }, [entries, sortBy]);
 
   return (
     <PageShell>
@@ -144,19 +182,21 @@ export function CollectionPage() {
         <div className="flex items-center justify-center py-20">
           <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
         </div>
-      ) : entries && entries.length > 0 ? (
+      ) : groupedByMedia.length > 0 ? (
         <div className="mt-4 grid gap-3 sm:grid-cols-2">
-          {entries.map(
-            (entry: Entry & { media: Media; profiles: Profile }) => (
-              <MediaCard
-                key={entry.id}
-                media={entry.media}
-                entry={entry}
-                profile={entry.profiles}
-                showUser
+          {groupedByMedia.map((group) => {
+            const media = group[0]!.media;
+            return (
+              <BlendedMediaCard
+                key={media.id}
+                media={media}
+                items={group.map((e) => ({
+                  entry: e,
+                  profile: e.profiles,
+                }))}
               />
-            )
-          )}
+            );
+          })}
         </div>
       ) : (
         <div className="flex items-center justify-center py-20">

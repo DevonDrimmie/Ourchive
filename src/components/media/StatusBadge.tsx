@@ -10,7 +10,7 @@ interface StatusBadgeProps {
   className?: string;
 }
 
-const statusConfig: Record<
+export const statusConfig: Record<
   EntryStatus,
   { label: string; icon: typeof Eye; variant: "default" | "secondary" | "outline" }
 > = {
@@ -20,13 +20,13 @@ const statusConfig: Record<
   dnf: { label: "DNF", icon: Ban, variant: "outline" },
 };
 
-const completedLabels: Partial<Record<MediaType, string>> = {
+export const completedLabels: Partial<Record<MediaType, string>> = {
   movie: "Watched",
   tv: "Watched",
   book: "Read",
 };
 
-const ownershipConfig: Record<
+export const ownershipConfig: Record<
   OwnershipStatus,
   { label: string; icon: typeof Package } | null
 > = {

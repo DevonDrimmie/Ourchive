@@ -5,6 +5,15 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { TopFourGrid } from "@/components/media/TopFourGrid";
 import {
+  MediaCollectionInsights,
+  type EntryWithMedia,
+} from "@/components/media/MediaCollectionInsights";
+import {
+  CollectionReviewsList,
+  CollectionWantList,
+} from "@/components/media/CollectionTabLists";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
   Dialog,
   DialogContent,
   DialogHeader,
@@ -65,10 +74,11 @@ export function ProfilePage() {
   const { user } = useAuth();
   const { data: profiles, isLoading: profilesLoading } = useProfiles();
   const { data: topFours, isLoading: topFoursLoading } = useTopFours(id!);
-  const { data: entries } = useCollection({
+  const { data: completedEntries } = useCollection({
     userId: id,
     status: "completed",
   });
+  const { data: allEntries } = useCollection({ userId: id });
   const updateProfile = useUpdateProfile();
 
   const [avatarDialogOpen, setAvatarDialogOpen] = useState(false);
@@ -104,13 +114,15 @@ export function ProfilePage() {
 
   const countByType = mediaTypes.reduce(
     (acc, type) => {
-      acc[type] = (entries ?? []).filter(
+      acc[type] = (completedEntries ?? []).filter(
         (e: Entry & { media: Media }) => e.media?.media_type === type
       ).length;
       return acc;
     },
     {} as Record<MediaType, number>
   );
+
+  const tabEntries = (allEntries ?? []) as EntryWithMedia[];
 
   const handleAvatarSave = () => {
     const url = avatarUrl.trim() || null;
@@ -246,6 +258,26 @@ export function ProfilePage() {
           />
         ))}
       </div>
+
+      <Tabs defaultValue="stats" className="mt-8">
+        <TabsList className="w-full justify-start">
+          <TabsTrigger value="stats">Stats</TabsTrigger>
+          <TabsTrigger value="reviews">Reviews</TabsTrigger>
+          <TabsTrigger value="wanted">Wanted</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="stats" className="mt-4">
+          <MediaCollectionInsights entries={tabEntries} emptyLabel="items" />
+        </TabsContent>
+
+        <TabsContent value="reviews" className="mt-4">
+          <CollectionReviewsList entries={tabEntries} showMediaTypeBadge />
+        </TabsContent>
+
+        <TabsContent value="wanted" className="mt-4">
+          <CollectionWantList entries={tabEntries} showMediaTypeBadge />
+        </TabsContent>
+      </Tabs>
     </PageShell>
   );
 }
