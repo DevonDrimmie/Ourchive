@@ -1,4 +1,4 @@
-import { useState, useDeferredValue } from "react";
+import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -13,6 +13,7 @@ import { CoverImage } from "@/components/media/CoverImage";
 import { EntryDialog } from "@/components/entry/EntryDialog";
 import { PageShell } from "@/components/layout/PageShell";
 import { useSearch } from "@/lib/hooks/useSearch";
+import { useDebounce } from "@/lib/hooks/useDebounce";
 import { useCreateEntry } from "@/lib/hooks/useEntries";
 import type { MediaType, SearchResult, EntryStatus } from "@/types";
 import { MEDIA_TYPE_LABELS } from "@/types";
@@ -27,8 +28,8 @@ import {
 export function SearchPage() {
   const [query, setQuery] = useState("");
   const [mediaType, setMediaType] = useState<MediaType>("movie");
-  const deferredQuery = useDeferredValue(query);
-  const { data: results, isLoading, isFetching } = useSearch(deferredQuery, mediaType);
+  const debouncedQuery = useDebounce(query, 400);
+  const { data: results, isLoading } = useSearch(debouncedQuery, mediaType);
   const createEntry = useCreateEntry();
 
   const [dialogResult, setDialogResult] = useState<SearchResult | null>(null);
@@ -94,7 +95,7 @@ export function SearchPage() {
         </div>
       </div>
 
-      {(isLoading || isFetching) && query.length >= 2 && (
+      {isLoading && debouncedQuery.length >= 2 && (
         <div className="flex items-center justify-center py-12">
           <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
         </div>

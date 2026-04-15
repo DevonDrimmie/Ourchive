@@ -6,7 +6,7 @@ import { StatusBadge } from "@/components/media/StatusBadge";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useMediaDetail, useMediaEntries } from "@/lib/hooks/useEntries";
 import { MEDIA_TYPE_LABELS, MEDIA_TYPE_VERB } from "@/types";
 import type { Profile, Entry, EntryStatus, MediaType } from "@/types";
@@ -119,6 +119,9 @@ export function MediaDetailPage() {
                   <CardContent className="pt-4">
                     <div className="flex items-center gap-3 mb-3">
                       <Avatar className="h-9 w-9">
+                        {entry.profiles?.avatar_url && (
+                          <AvatarImage src={entry.profiles.avatar_url} alt={entry.profiles.display_name} />
+                        )}
                         <AvatarFallback className="text-xs bg-primary/20 text-primary">
                           {initials}
                         </AvatarFallback>

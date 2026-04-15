@@ -7,7 +7,7 @@ import {
   Menu,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -82,6 +82,9 @@ export function Header() {
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="h-8 w-8 rounded-full p-0">
                 <Avatar className="h-8 w-8">
+                  {profile?.avatar_url && (
+                    <AvatarImage src={profile.avatar_url} alt={profile.display_name} />
+                  )}
                   <AvatarFallback className="text-xs bg-primary/20 text-primary">
                     {initials}
                   </AvatarFallback>
