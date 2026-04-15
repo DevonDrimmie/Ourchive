@@ -30,29 +30,90 @@ export interface LetterboxdImportSummary {
   rows: LetterboxdImportRowResult[];
 }
 
-/** Parse a single CSV line respecting quoted fields */
-export function parseCsvLine(line: string): string[] {
-  const out: string[] = [];
-  let cur = "";
+/**
+ * Parse full CSV text (RFC 4180-style). Newlines inside quoted fields are kept
+ * as part of the field — required for Letterboxd reviews.csv with multi-line reviews.
+ */
+export function parseCsv(csvText: string): string[][] {
+  const s = csvText.replace(/^\uFEFF/, "");
+  const rows: string[][] = [];
+  let row: string[] = [];
+  let field = "";
+  let i = 0;
   let inQuotes = false;
-  for (let i = 0; i < line.length; i++) {
-    const c = line[i];
-    if (c === '"') {
-      if (inQuotes && line[i + 1] === '"') {
-        cur += '"';
-        i++;
-      } else {
-        inQuotes = !inQuotes;
-      }
-    } else if (!inQuotes && c === ",") {
-      out.push(cur);
-      cur = "";
-    } else {
-      cur += c;
+
+  const endField = () => {
+    row.push(field);
+    field = "";
+  };
+
+  const endRow = () => {
+    endField();
+    if (row.length > 1 || (row.length === 1 && row[0] !== "")) {
+      rows.push(row);
     }
+    row = [];
+  };
+
+  while (i < s.length) {
+    const c = s[i]!;
+
+    if (inQuotes) {
+      if (c === '"') {
+        if (s[i + 1] === '"') {
+          field += '"';
+          i += 2;
+          continue;
+        }
+        inQuotes = false;
+        i++;
+        continue;
+      }
+      field += c;
+      i++;
+      continue;
+    }
+
+    if (c === '"') {
+      inQuotes = true;
+      i++;
+      continue;
+    }
+
+    if (c === ",") {
+      endField();
+      i++;
+      continue;
+    }
+
+    if (c === "\r" && s[i + 1] === "\n") {
+      i += 2;
+      endRow();
+      continue;
+    }
+
+    if (c === "\n" || c === "\r") {
+      i++;
+      endRow();
+      continue;
+    }
+
+    field += c;
+    i++;
   }
-  out.push(cur);
-  return out.map((s) => s.trim());
+
+  endField();
+  if (row.length > 1 || (row.length === 1 && row[0] !== "")) {
+    rows.push(row);
+  }
+
+  return rows;
+}
+
+/** Parse a single CSV line (no embedded newlines in fields). */
+export function parseCsvLine(line: string): string[] {
+  const rows = parseCsv(line + "\n");
+  return (rows[0] ?? []).map((cell) => cell.trim());
 }
 
 /** Normalize header to a simple key */
@@ -65,24 +126,17 @@ export function parseLetterboxdCsv(csvText: string): {
   headers: string[];
   rows: Record<string, string>[];
 } {
-  const lines = csvText.split(/\r?\n/).filter((l) => l.trim().length > 0);
-  if (lines.length < 2) {
+  const table = parseCsv(csvText);
+  if (table.length < 2) {
     return { headers: [], rows: [] };
   }
 
-  const headerLine = lines[0];
-  if (!headerLine) {
-    return { headers: [], rows: [] };
-  }
-
-  const rawHeaders = parseCsvLine(headerLine);
+  const rawHeaders = table[0]!.map((h) => h.trim());
   const normHeaders = rawHeaders.map(normalizeHeader);
 
   const rows: Record<string, string>[] = [];
-  for (let i = 1; i < lines.length; i++) {
-    const line = lines[i];
-    if (!line) continue;
-    const cells = parseCsvLine(line);
+  for (let i = 1; i < table.length; i++) {
+    const cells = table[i]!.map((c) => c.trim());
     if (cells.length === 0 || (cells.length === 1 && !cells[0])) continue;
 
     const row: Record<string, string> = {};
