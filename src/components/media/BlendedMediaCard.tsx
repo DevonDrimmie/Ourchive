@@ -222,13 +222,19 @@ export function BlendedMediaCard({
           className
         )}
       >
-        <div className="flex gap-3 p-3">
+        <div className="flex items-stretch gap-3 p-3">
           <div
             className={cn(
-              "relative shrink-0 overflow-hidden rounded-md bg-muted",
+              "relative shrink-0 overflow-hidden rounded-md bg-muted self-start",
               media.media_type === "record" ? "h-24 w-24" : "h-28 w-20"
             )}
           >
+            <div
+              className="pointer-events-none absolute left-1.5 top-1.5 z-10 flex size-7 items-center justify-center rounded-full bg-card shadow-sm ring-1 ring-border/60"
+              aria-hidden
+            >
+              <Icon className="size-3.5 text-muted-foreground" />
+            </div>
             {media.cover_url ? (
               <img
                 src={media.cover_url}
@@ -253,7 +259,7 @@ export function BlendedMediaCard({
             </div>
           </div>
 
-          <div className="flex min-w-0 flex-1 flex-col gap-1.5 py-0.5">
+          <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-1.5 py-0.5">
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0 flex-1">
                 <h3 className="line-clamp-2 text-sm font-semibold leading-tight group-hover:text-primary transition-colors">
@@ -299,7 +305,6 @@ export function BlendedMediaCard({
             )}
 
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <Icon className="h-3 w-3 shrink-0" />
               {media.year && <span>{media.year}</span>}
               {media.genres.length > 0 && (
                 <span className="truncate">
@@ -308,15 +313,8 @@ export function BlendedMediaCard({
               )}
             </div>
 
-            <div className="flex items-start justify-between gap-2">
-              <div className="min-w-0 flex-1">
-                <AggregatedStatusBadges items={items} mediaType={media.media_type} />
-              </div>
-              <StackedRatings items={items} />
-            </div>
-
             {showReviews && reviewRows.length > 0 && (
-              <div className="mt-1 space-y-2 border-t border-border/50 pt-2">
+              <div className="space-y-2 border-t border-border/50 pt-2">
                 {reviewRows.map(({ entry, profile }) => (
                   <div key={entry.id} className="flex gap-2">
                     <Tooltip>
@@ -356,6 +354,13 @@ export function BlendedMediaCard({
                 ))}
               </div>
             )}
+
+            <div className="mt-auto flex items-start justify-between gap-2 pt-1">
+              <div className="min-w-0 flex-1">
+                <AggregatedStatusBadges items={items} mediaType={media.media_type} />
+              </div>
+              <StackedRatings items={items} />
+            </div>
           </div>
         </div>
       </Card>

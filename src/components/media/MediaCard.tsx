@@ -53,10 +53,16 @@ export function MediaCard({
         <div className="flex gap-3 p-3">
           <div
             className={cn(
-              "relative flex-shrink-0 overflow-hidden rounded-md bg-muted",
+              "relative shrink-0 overflow-hidden rounded-md bg-muted",
               media.media_type === "record" ? "h-24 w-24" : "h-28 w-20"
             )}
           >
+            <div
+              className="pointer-events-none absolute left-1.5 top-1.5 z-10 flex size-7 items-center justify-center rounded-full bg-card shadow-sm ring-1 ring-border/60"
+              aria-hidden
+            >
+              <Icon className="size-3.5 text-muted-foreground" />
+            </div>
             {media.cover_url ? (
               <img
                 src={media.cover_url}
@@ -118,7 +124,6 @@ export function MediaCard({
               )}
 
               <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
-                <Icon className="h-3 w-3" />
                 {media.year && <span>{media.year}</span>}
                 {media.genres.length > 0 && (
                   <span className="truncate">
