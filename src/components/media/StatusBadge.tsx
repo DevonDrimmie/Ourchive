@@ -23,7 +23,7 @@ export function StatusBadge({ status, owned, className }: StatusBadgeProps) {
   const Icon = config.icon;
 
   return (
-    <div className={cn("flex items-center gap-1", className)}>
+    <div className={cn("flex flex-wrap items-center gap-1", className)}>
       <Badge variant={config.variant} className="gap-1 text-xs">
         <Icon className="h-3 w-3" />
         {config.label}

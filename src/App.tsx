@@ -9,6 +9,7 @@ import { HomePage } from "@/pages/Home";
 import { SearchPage } from "@/pages/Search";
 import { MediaDetailPage } from "@/pages/MediaDetail";
 import { CollectionPage } from "@/pages/Collection";
+import { ProfilePage } from "@/pages/Profile";
 import { Loader2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -108,6 +109,42 @@ function AppRoutes() {
         }
       />
       <Route
+        path="/movies"
+        element={
+          <ProtectedRoute>
+            <Header />
+            <HomePage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/tv"
+        element={
+          <ProtectedRoute>
+            <Header />
+            <HomePage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/books"
+        element={
+          <ProtectedRoute>
+            <Header />
+            <HomePage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/records"
+        element={
+          <ProtectedRoute>
+            <Header />
+            <HomePage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/search"
         element={
           <ProtectedRoute>
@@ -131,6 +168,15 @@ function AppRoutes() {
           <ProtectedRoute>
             <Header />
             <CollectionPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/profile/:id"
+        element={
+          <ProtectedRoute>
+            <Header />
+            <ProfilePage />
           </ProtectedRoute>
         }
       />

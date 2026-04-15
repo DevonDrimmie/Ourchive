@@ -67,16 +67,16 @@ export function MediaDetailPage() {
           }
         />
 
-        <div className="flex-1 space-y-3">
+        <div className="flex-1 min-w-0 space-y-3">
           <div>
             <Badge variant="outline" className="mb-2 text-xs">
               {MEDIA_TYPE_LABELS[media.media_type]}
             </Badge>
-            <h1 className="text-2xl font-bold tracking-tight">
+            <h1 className="text-2xl font-bold tracking-tight break-words">
               {media.title}
             </h1>
             {subtitle && (
-              <p className="mt-0.5 text-lg text-muted-foreground">
+              <p className="mt-0.5 text-lg text-muted-foreground break-words">
                 {subtitle}
               </p>
             )}
@@ -96,7 +96,7 @@ export function MediaDetailPage() {
           )}
 
           {overview && (
-            <p className="text-sm text-muted-foreground leading-relaxed">
+            <p className="text-sm text-muted-foreground leading-relaxed break-words">
               {overview}
             </p>
           )}

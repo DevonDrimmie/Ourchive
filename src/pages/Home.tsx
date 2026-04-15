@@ -1,23 +1,201 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { MediaCard } from "@/components/media/MediaCard";
+import { Card } from "@/components/ui/card";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { RatingStars } from "@/components/media/RatingStars";
 import { PageShell } from "@/components/layout/PageShell";
 import { useFeed } from "@/lib/hooks/useEntries";
-import { Loader2, Search } from "lucide-react";
+import type { Media, Entry, Profile, MediaType } from "@/types";
+import { Loader2, Plus, Film, Tv, BookOpen, Disc3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import { formatDistanceToNow } from "date-fns";
 
 const filters = [
-  { value: "all", label: "All" },
-  { value: "movie", label: "Movies" },
-  { value: "tv", label: "TV" },
-  { value: "book", label: "Books" },
-  { value: "record", label: "Records" },
+  { value: "all", label: "All", path: "/" },
+  { value: "movie", label: "Movies", path: "/movies" },
+  { value: "tv", label: "TV", path: "/tv" },
+  { value: "book", label: "Books", path: "/books" },
+  { value: "record", label: "Records", path: "/records" },
 ];
 
+const pathToFilter: Record<string, string> = {
+  "/": "all",
+  "/movies": "movie",
+  "/tv": "tv",
+  "/books": "book",
+  "/records": "record",
+};
+
+const typeIcons: Record<MediaType, typeof Film> = {
+  movie: Film,
+  tv: Tv,
+  book: BookOpen,
+  record: Disc3,
+};
+
+const typeLabels: Record<MediaType, string> = {
+  movie: "movie",
+  tv: "show",
+  book: "book",
+  record: "record",
+};
+
+function getActionText(entry: Entry, media: Media, profile: Profile): string {
+  const name = profile.display_name;
+  const thing = typeLabels[media.media_type];
+
+  if (entry.status === "want" && entry.owned) {
+    return `${name} added this ${thing} to their backlog`;
+  }
+  if (entry.status === "want") {
+    return `${name} wants this ${thing}`;
+  }
+  if (entry.status === "consuming") {
+    const verb =
+      media.media_type === "book"
+        ? "is reading"
+        : media.media_type === "record"
+          ? "is listening to"
+          : "is watching";
+    return `${name} ${verb} this ${thing}`;
+  }
+  if (entry.owned && entry.rating != null) {
+    return `${name} rated and owns this ${thing}`;
+  }
+  if (entry.rating != null) {
+    return `${name} rated this ${thing}`;
+  }
+  if (entry.owned) {
+    return `${name} owns this ${thing}`;
+  }
+
+  const verb =
+    media.media_type === "book"
+      ? "finished"
+      : media.media_type === "record"
+        ? "listened to"
+        : "watched";
+  return `${name} ${verb} this ${thing}`;
+}
+
+interface FeedEntry extends Entry {
+  media: Media;
+  profiles: Profile;
+}
+
+function FeedCard({ entry }: { entry: FeedEntry }) {
+  const { media, profiles: profile } = entry;
+  const Icon = typeIcons[media.media_type];
+  const initials = profile.display_name
+    ?.split(" ")
+    .map((n) => n[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+
+  const subtitle =
+    media.media_type === "record"
+      ? (media.metadata as { artist?: string })?.artist
+      : media.media_type === "book"
+        ? (media.metadata as { authors?: string[] })?.authors?.join(", ")
+        : (media.metadata as { director?: string })?.director;
+
+  const timeAgo = formatDistanceToNow(new Date(entry.updated_at), {
+    addSuffix: true,
+  });
+
+  return (
+    <Link to={`/media/${media.id}`}>
+      <Card className="group gap-0 py-0 overflow-hidden border-border/50 bg-card hover:border-primary/30 transition-all duration-200">
+        <div className="flex items-center gap-2 px-3 pt-3 pb-2">
+          <Avatar className="h-6 w-6">
+            {profile.avatar_url && (
+              <AvatarImage src={profile.avatar_url} alt={profile.display_name} />
+            )}
+            <AvatarFallback className="text-[10px] bg-primary/20 text-primary">
+              {initials}
+            </AvatarFallback>
+          </Avatar>
+          <p className="text-xs text-muted-foreground flex-1 truncate">
+            {getActionText(entry, media, profile)}
+          </p>
+          <span className="text-[10px] text-muted-foreground/60 shrink-0">
+            {timeAgo}
+          </span>
+        </div>
+
+        <div className="flex gap-3 px-3 pb-3">
+          <div
+            className={cn(
+              "relative shrink-0 overflow-hidden rounded-md bg-muted",
+              media.media_type === "record" ? "h-20 w-20" : "h-24 w-16"
+            )}
+          >
+            {media.cover_url ? (
+              <img
+                src={media.cover_url}
+                alt={media.title}
+                className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-105"
+                loading="lazy"
+                referrerPolicy="no-referrer"
+                crossOrigin="anonymous"
+                onError={(e) => {
+                  e.currentTarget.style.display = "none";
+                  e.currentTarget.nextElementSibling?.classList.remove("hidden");
+                }}
+              />
+            ) : null}
+            <div
+              className={cn(
+                "absolute inset-0 flex items-center justify-center",
+                media.cover_url && "hidden"
+              )}
+            >
+              <Icon className="h-6 w-6 text-muted-foreground/30" />
+            </div>
+          </div>
+
+          <div className="flex min-w-0 flex-1 flex-col justify-center">
+            <h3 className="text-sm font-semibold leading-tight line-clamp-2 group-hover:text-primary transition-colors">
+              {media.title}
+            </h3>
+            {subtitle && (
+              <p className="mt-0.5 text-xs text-muted-foreground truncate">
+                {subtitle}
+              </p>
+            )}
+            <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
+              {media.year && <span>{media.year}</span>}
+              {media.genres.length > 0 && (
+                <span className="truncate">
+                  {media.genres.slice(0, 2).join(", ")}
+                </span>
+              )}
+            </div>
+            {entry.rating != null && (
+              <div className="mt-1.5">
+                <RatingStars rating={entry.rating} size="sm" />
+              </div>
+            )}
+          </div>
+        </div>
+      </Card>
+    </Link>
+  );
+}
+
 export function HomePage() {
-  const [filter, setFilter] = useState("all");
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const filter = pathToFilter[location.pathname] ?? "all";
   const { data: entries, isLoading } = useFeed(filter);
+
+  const handleTabChange = (value: string) => {
+    const tab = filters.find((f) => f.value === value);
+    if (tab) navigate(tab.path);
+  };
 
   return (
     <PageShell>
@@ -30,17 +208,13 @@ export function HomePage() {
         </div>
         <Button asChild size="sm">
           <Link to="/search">
-            <Search className="mr-2 h-4 w-4" />
+            <Plus className="mr-2 h-4 w-4" />
             Add
           </Link>
         </Button>
       </div>
 
-      <Tabs
-        value={filter}
-        onValueChange={setFilter}
-        className="mt-4"
-      >
+      <Tabs value={filter} onValueChange={handleTabChange} className="mt-4">
         <TabsList>
           {filters.map((f) => (
             <TabsTrigger key={f.value} value={f.value} className="text-xs">
@@ -55,15 +229,9 @@ export function HomePage() {
           <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
         </div>
       ) : entries && entries.length > 0 ? (
-        <div className="mt-4 grid gap-3 sm:grid-cols-2">
-          {entries.map((entry) => (
-            <MediaCard
-              key={entry.id}
-              media={entry.media}
-              entry={entry}
-              profile={entry.profiles}
-              showUser
-            />
+        <div className="mt-4 flex flex-col gap-3 max-w-xl mx-auto">
+          {entries.map((entry: FeedEntry) => (
+            <FeedCard key={entry.id} entry={entry} />
           ))}
         </div>
       ) : (

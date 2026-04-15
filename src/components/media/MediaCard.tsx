@@ -40,7 +40,7 @@ export function MediaCard({
     <Link to={`/media/${media.id}`}>
       <Card
         className={cn(
-          "group overflow-hidden border-border/50 bg-card hover:border-primary/30 transition-all duration-200",
+          "group overflow-hidden border-border/50 bg-card py-0 gap-0 hover:border-primary/30 transition-all duration-200",
           className
         )}
       >
@@ -67,7 +67,7 @@ export function MediaCard({
             ) : null}
             <div
               className={cn(
-                "flex h-full w-full items-center justify-center",
+                "absolute inset-0 flex h-full w-full items-center justify-center",
                 media.cover_url && "hidden"
               )}
             >
@@ -100,7 +100,7 @@ export function MediaCard({
               </div>
             </div>
 
-            <div className="mt-2 flex items-center justify-between">
+            <div className="mt-2 flex flex-wrap items-center justify-between gap-1">
               {entry && (
                 <StatusBadge status={entry.status} owned={entry.owned} />
               )}
@@ -110,7 +110,7 @@ export function MediaCard({
             </div>
 
             {showUser && profile && (
-              <p className="mt-1 text-xs text-muted-foreground">
+              <p className="mt-1 text-xs text-muted-foreground truncate">
                 {profile.display_name}
               </p>
             )}

@@ -91,13 +91,13 @@ export function EntryDialog({
             className={
               result.media_type === "record"
                 ? "h-24 w-24 shrink-0"
-                : "h-32 w-22 shrink-0"
+                : "h-32 w-20 shrink-0"
             }
           />
-          <div className="min-w-0">
-            <h3 className="font-semibold leading-tight">{result.title}</h3>
+          <div className="min-w-0 flex-1">
+            <h3 className="font-semibold leading-tight line-clamp-2">{result.title}</h3>
             {subtitle && (
-              <p className="mt-0.5 text-sm text-muted-foreground">{subtitle}</p>
+              <p className="mt-0.5 text-sm text-muted-foreground truncate">{subtitle}</p>
             )}
             {result.year && (
               <p className="text-sm text-muted-foreground">{result.year}</p>

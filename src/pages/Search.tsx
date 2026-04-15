@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams, useLocation } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -26,8 +27,24 @@ import {
 } from "lucide-react";
 
 export function SearchPage() {
-  const [query, setQuery] = useState("");
-  const [mediaType, setMediaType] = useState<MediaType>("movie");
+  const [searchParams] = useSearchParams();
+  const location = useLocation();
+  const prefill = (location.state as { prefill?: SearchResult })?.prefill;
+  const [query, setQuery] = useState(searchParams.get("q") ?? "");
+  const [mediaType, setMediaType] = useState<MediaType>(
+    prefill?.media_type ?? "movie"
+  );
+
+  useEffect(() => {
+    if (prefill) {
+      setQuery(prefill.title);
+      setMediaType(prefill.media_type);
+      setDialogResult(prefill);
+      setDialogDefaults({ status: "completed", owned: false });
+      setDialogOpen(true);
+      window.history.replaceState({}, "", "/search");
+    }
+  }, []);
   const debouncedQuery = useDebounce(query, 400);
   const { data: results, isLoading } = useSearch(debouncedQuery, mediaType);
   const createEntry = useCreateEntry();
@@ -83,7 +100,7 @@ export function SearchPage() {
           </SelectContent>
         </Select>
 
-        <div className="relative flex-1">
+        <div className="relative flex-1 min-w-0">
           <SearchIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             value={query}
@@ -131,7 +148,7 @@ export function SearchPage() {
                   />
 
                   <div className="min-w-0 flex-1">
-                    <h3 className="font-semibold leading-tight text-sm">
+                    <h3 className="font-semibold leading-tight text-sm truncate">
                       {result.title}
                     </h3>
                     {subtitle && (
