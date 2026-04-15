@@ -102,7 +102,7 @@ export function MediaCard({
 
             <div className="mt-2 flex flex-wrap items-center justify-between gap-1">
               {entry && (
-                <StatusBadge status={entry.status} owned={entry.owned} />
+                <StatusBadge status={entry.status} ownership={entry.ownership} />
               )}
               {entry?.rating != null && (
                 <RatingStars rating={entry.rating} size="sm" />

@@ -39,13 +39,13 @@ export function CollectionPage() {
   const [status, setStatus] = useState("all");
   const [sortBy, setSortBy] = useState("date");
   const [userId, setUserId] = useState<string>("all");
-  const [ownedFilter, setOwnedFilter] = useState<string>("any");
+  const [ownershipFilter, setOwnershipFilter] = useState<string>("all");
 
   const { data: profiles } = useProfiles();
   const { data: entries, isLoading } = useCollection({
     mediaType,
     status,
-    owned: ownedFilter === "owned" ? true : ownedFilter === "not-owned" ? false : undefined,
+    ownership: ownershipFilter !== "all" ? ownershipFilter : undefined,
     userId: userId !== "all" ? userId : undefined,
     sortBy,
   });
@@ -81,14 +81,17 @@ export function CollectionPage() {
           </SelectContent>
         </Select>
 
-        <Select value={ownedFilter} onValueChange={setOwnedFilter}>
-          <SelectTrigger className="w-28 h-8 text-xs">
-            <SelectValue placeholder="Owned" />
+        <Select value={ownershipFilter} onValueChange={setOwnershipFilter}>
+          <SelectTrigger className="w-32 h-8 text-xs">
+            <SelectValue placeholder="Ownership" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="any">Any</SelectItem>
+            <SelectItem value="all">Any</SelectItem>
             <SelectItem value="owned">Owned</SelectItem>
-            <SelectItem value="not-owned">Not Owned</SelectItem>
+            <SelectItem value="physical">Physical</SelectItem>
+            <SelectItem value="digital">Digital</SelectItem>
+            <SelectItem value="want_to_own">Want to Own</SelectItem>
+            <SelectItem value="none">Not Owned</SelectItem>
           </SelectContent>
         </Select>
 

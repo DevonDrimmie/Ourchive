@@ -12,7 +12,7 @@ export interface OmniResult extends SearchResult {
     userId: string;
     displayName: string;
     status: EntryStatus;
-    owned: boolean;
+    ownership: string;
     rating: number | null;
   }[];
 }
@@ -57,7 +57,7 @@ export function useOmniSearch(query: string) {
 
           const { data: entryRows } = await supabase
             .from("entries")
-            .select("media_id, user_id, status, owned, rating, profiles(display_name)")
+            .select("media_id, user_id, status, ownership, rating, profiles(display_name)")
             .in("media_id", mediaIds);
 
           for (const m of mediaRows) {
@@ -70,7 +70,7 @@ export function useOmniSearch(query: string) {
                 (e: {
                   user_id: string;
                   status: EntryStatus;
-                  owned: boolean;
+                  ownership: string;
                   rating: number | null;
                   profiles: { display_name: string } | { display_name: string }[];
                 }) => {
@@ -81,7 +81,7 @@ export function useOmniSearch(query: string) {
                     userId: e.user_id,
                     displayName: p?.display_name ?? "",
                     status: e.status,
-                    owned: e.owned,
+                    ownership: e.ownership,
                     rating: e.rating,
                   };
                 }

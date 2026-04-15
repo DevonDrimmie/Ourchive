@@ -2,6 +2,8 @@ export type MediaType = "movie" | "tv" | "book" | "record";
 
 export type EntryStatus = "want" | "consuming" | "completed";
 
+export type OwnershipStatus = "none" | "want_to_own" | "physical" | "digital";
+
 export interface Profile {
   id: string;
   display_name: string;
@@ -26,7 +28,7 @@ export interface Entry {
   media_id: string;
   user_id: string;
   status: EntryStatus;
-  owned: boolean;
+  ownership: OwnershipStatus;
   rating: number | null;
   review: string | null;
   consumed_date: string | null;
@@ -71,6 +73,13 @@ export const STATUS_LABELS: Record<EntryStatus, string> = {
   completed: "Completed",
 };
 
+export const OWNERSHIP_LABELS: Record<OwnershipStatus, string> = {
+  none: "Don't own",
+  want_to_own: "Want to own",
+  physical: "Own (Physical)",
+  digital: "Own (Digital)",
+};
+
 export const MEDIA_TYPE_VERB: Record<MediaType, Record<EntryStatus, string>> = {
   movie: { want: "Want to watch", consuming: "Watching", completed: "Watched" },
   tv: { want: "Want to watch", consuming: "Watching", completed: "Watched" },
@@ -79,5 +88,61 @@ export const MEDIA_TYPE_VERB: Record<MediaType, Record<EntryStatus, string>> = {
     want: "Want to listen",
     consuming: "Listening",
     completed: "Listened",
+  },
+};
+
+// --- Per-media-type configuration ---
+
+export interface MediaTypeConfig {
+  statusOptions: EntryStatus[];
+  ownershipOptions: OwnershipStatus[];
+  defaultStatus: EntryStatus;
+  defaultOwnership: OwnershipStatus;
+  showStatus: boolean;
+  showOwnership: boolean;
+  primaryCta: { label: string; status: EntryStatus; ownership: OwnershipStatus };
+  secondaryCta: { label: string; status: EntryStatus; ownership: OwnershipStatus };
+}
+
+export const MEDIA_CONFIG: Record<MediaType, MediaTypeConfig> = {
+  movie: {
+    statusOptions: ["want", "consuming", "completed"],
+    ownershipOptions: ["none", "want_to_own", "physical", "digital"],
+    defaultStatus: "want",
+    defaultOwnership: "none",
+    showStatus: true,
+    showOwnership: true,
+    primaryCta: { label: "Log", status: "completed", ownership: "none" },
+    secondaryCta: { label: "Want to watch", status: "want", ownership: "none" },
+  },
+  tv: {
+    statusOptions: ["want", "consuming", "completed"],
+    ownershipOptions: ["none", "want_to_own", "physical", "digital"],
+    defaultStatus: "want",
+    defaultOwnership: "none",
+    showStatus: true,
+    showOwnership: true,
+    primaryCta: { label: "Want to watch", status: "want", ownership: "none" },
+    secondaryCta: { label: "Log", status: "completed", ownership: "none" },
+  },
+  book: {
+    statusOptions: ["want", "consuming", "completed"],
+    ownershipOptions: ["none", "want_to_own", "physical", "digital"],
+    defaultStatus: "want",
+    defaultOwnership: "none",
+    showStatus: true,
+    showOwnership: true,
+    primaryCta: { label: "Log", status: "completed", ownership: "none" },
+    secondaryCta: { label: "Want to read", status: "want", ownership: "none" },
+  },
+  record: {
+    statusOptions: [],
+    ownershipOptions: ["none", "want_to_own", "physical"],
+    defaultStatus: "completed",
+    defaultOwnership: "want_to_own",
+    showStatus: false,
+    showOwnership: true,
+    primaryCta: { label: "Owned", status: "completed", ownership: "physical" },
+    secondaryCta: { label: "Want to own", status: "want", ownership: "want_to_own" },
   },
 };

@@ -45,7 +45,9 @@ function getActionText(entry: Entry, media: Media, profile: Profile): string {
   const name = profile.display_name;
   const thing = typeLabels[media.media_type];
 
-  if (entry.status === "want" && entry.owned) {
+  const isOwned = entry.ownership === "physical" || entry.ownership === "digital";
+
+  if (entry.status === "want" && isOwned) {
     return `${name} added this ${thing} to their backlog`;
   }
   if (entry.status === "want") {
@@ -60,13 +62,16 @@ function getActionText(entry: Entry, media: Media, profile: Profile): string {
           : "is watching";
     return `${name} ${verb} this ${thing}`;
   }
-  if (entry.owned && entry.rating != null) {
+  if (entry.ownership === "want_to_own") {
+    return `${name} wants to own this ${thing}`;
+  }
+  if (isOwned && entry.rating != null) {
     return `${name} rated and owns this ${thing}`;
   }
   if (entry.rating != null) {
     return `${name} rated this ${thing}`;
   }
-  if (entry.owned) {
+  if (isOwned) {
     return `${name} owns this ${thing}`;
   }
 

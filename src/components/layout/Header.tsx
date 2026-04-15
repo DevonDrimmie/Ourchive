@@ -112,7 +112,7 @@ function SearchResultRow({
               )}
             >
               {s.displayName?.split(" ")[0]}: {statusLabels[s.status]}
-              {s.owned && " ✦"}
+              {(s.ownership === "physical" || s.ownership === "digital") && " ✦"}
             </Badge>
           ))
         ) : (

@@ -1,76 +1,141 @@
 import { useState, useEffect } from "react";
 import { useSearchParams, useLocation } from "react-router-dom";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { CoverImage } from "@/components/media/CoverImage";
 import { EntryDialog } from "@/components/entry/EntryDialog";
 import { PageShell } from "@/components/layout/PageShell";
-import { useSearch } from "@/lib/hooks/useSearch";
-import { useDebounce } from "@/lib/hooks/useDebounce";
+import { useOmniSearch } from "@/lib/hooks/useOmniSearch";
+import type { OmniResult } from "@/lib/hooks/useOmniSearch";
 import { useCreateEntry } from "@/lib/hooks/useEntries";
-import type { MediaType, SearchResult, EntryStatus } from "@/types";
-import { MEDIA_TYPE_LABELS } from "@/types";
+import type { SearchResult } from "@/types";
+import { MEDIA_CONFIG } from "@/types";
 import {
   Search as SearchIcon,
   Loader2,
-  Bookmark,
-  Package,
-  Plus,
+  Film,
+  Tv,
+  BookOpen,
+  Disc3,
 } from "lucide-react";
+import type { MediaType } from "@/types";
+import { cn } from "@/lib/utils";
+
+const typeIcons: Record<MediaType, typeof Film> = {
+  movie: Film,
+  tv: Tv,
+  book: BookOpen,
+  record: Disc3,
+};
+
+function SearchResultCard({
+  result,
+  onLog,
+}: {
+  result: OmniResult;
+  onLog: (result: OmniResult) => void;
+}) {
+  const config = MEDIA_CONFIG[result.media_type];
+  const createEntry = useCreateEntry();
+  const Icon = typeIcons[result.media_type];
+
+  const subtitle =
+    result.media_type === "record"
+      ? (result.metadata as { artist?: string })?.artist
+      : result.media_type === "book"
+        ? (result.metadata as { authors?: string[] })?.authors?.join(", ")
+        : undefined;
+
+  const handleSecondary = async () => {
+    await createEntry.mutateAsync({
+      searchResult: result,
+      status: config.secondaryCta.status,
+      ownership: config.secondaryCta.ownership,
+    });
+  };
+
+  return (
+    <Card className="gap-0 py-0 border-border/50">
+      <div className="flex items-center gap-3 p-3">
+        <CoverImage
+          src={result.cover_url}
+          alt={result.title}
+          mediaType={result.media_type}
+          className={cn(
+            "shrink-0",
+            result.media_type === "record" ? "h-14 w-14" : "h-18 w-12"
+          )}
+        />
+
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-1.5">
+            <Icon className="h-3 w-3 shrink-0 text-muted-foreground" />
+            <h3 className="font-semibold leading-tight text-sm truncate">
+              {result.title}
+            </h3>
+          </div>
+          {subtitle && (
+            <p className="text-xs text-muted-foreground mt-0.5 truncate">
+              {subtitle}
+            </p>
+          )}
+          <div className="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground">
+            {result.year && <span>{result.year}</span>}
+            {result.genres.length > 0 && (
+              <span className="truncate">
+                {result.genres.slice(0, 3).join(", ")}
+              </span>
+            )}
+          </div>
+        </div>
+
+        <div className="flex shrink-0 items-center gap-1.5">
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-7 text-xs"
+            onClick={handleSecondary}
+            disabled={createEntry.isPending}
+          >
+            {config.secondaryCta.label}
+          </Button>
+          <Button
+            variant="default"
+            size="sm"
+            className="h-7 text-xs"
+            onClick={() => onLog(result)}
+          >
+            {config.primaryCta.label}
+          </Button>
+        </div>
+      </div>
+    </Card>
+  );
+}
 
 export function SearchPage() {
   const [searchParams] = useSearchParams();
   const location = useLocation();
   const prefill = (location.state as { prefill?: SearchResult })?.prefill;
   const [query, setQuery] = useState(searchParams.get("q") ?? "");
-  const [mediaType, setMediaType] = useState<MediaType>(
-    prefill?.media_type ?? "movie"
-  );
+
+  const [dialogResult, setDialogResult] = useState<SearchResult | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
 
   useEffect(() => {
     if (prefill) {
       setQuery(prefill.title);
-      setMediaType(prefill.media_type);
       setDialogResult(prefill);
-      setDialogDefaults({ status: "completed", owned: false });
       setDialogOpen(true);
       window.history.replaceState({}, "", "/search");
     }
   }, []);
-  const debouncedQuery = useDebounce(query, 400);
-  const { data: results, isLoading } = useSearch(debouncedQuery, mediaType);
-  const createEntry = useCreateEntry();
 
-  const [dialogResult, setDialogResult] = useState<SearchResult | null>(null);
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [dialogDefaults, setDialogDefaults] = useState<{
-    status: EntryStatus;
-    owned: boolean;
-  }>({ status: "completed", owned: false });
+  const { data: results, isLoading } = useOmniSearch(query);
 
-  const handleQuickAction = async (
-    result: SearchResult,
-    status: EntryStatus,
-    owned: boolean
-  ) => {
-    await createEntry.mutateAsync({
-      searchResult: result,
-      status,
-      owned,
-    });
-  };
-
-  const handleLog = (result: SearchResult) => {
+  const handleLog = (result: OmniResult) => {
     setDialogResult(result);
-    setDialogDefaults({ status: "completed", owned: false });
     setDialogOpen(true);
   };
 
@@ -81,38 +146,18 @@ export function SearchPage() {
         Find media to add to your collection
       </p>
 
-      <div className="mt-4 flex gap-2">
-        <Select
-          value={mediaType}
-          onValueChange={(v) => setMediaType(v as MediaType)}
-        >
-          <SelectTrigger className="w-32">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {(Object.entries(MEDIA_TYPE_LABELS) as [MediaType, string][]).map(
-              ([value, label]) => (
-                <SelectItem key={value} value={value}>
-                  {label}
-                </SelectItem>
-              )
-            )}
-          </SelectContent>
-        </Select>
-
-        <div className="relative flex-1 min-w-0">
-          <SearchIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder={`Search ${MEDIA_TYPE_LABELS[mediaType].toLowerCase()}s...`}
-            className="pl-9"
-            autoFocus
-          />
-        </div>
+      <div className="mt-4 relative">
+        <SearchIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <Input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search movies, books, records, TV..."
+          className="pl-9"
+          autoFocus
+        />
       </div>
 
-      {isLoading && debouncedQuery.length >= 2 && (
+      {isLoading && query.length >= 2 && (
         <div className="flex items-center justify-center py-12">
           <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
         </div>
@@ -120,89 +165,13 @@ export function SearchPage() {
 
       {results && results.length > 0 && (
         <div className="mt-4 space-y-2">
-          {results.map((result) => {
-            const subtitle =
-              result.media_type === "record"
-                ? (result.metadata as { artist?: string })?.artist
-                : result.media_type === "book"
-                  ? (result.metadata as { authors?: string[] })?.authors?.join(
-                      ", "
-                    )
-                  : undefined;
-
-            return (
-              <Card
-                key={`${result.external_source}-${result.external_id}`}
-                className="border-border/50"
-              >
-                <div className="flex items-center gap-3 p-3">
-                  <CoverImage
-                    src={result.cover_url}
-                    alt={result.title}
-                    mediaType={result.media_type}
-                    className={
-                      result.media_type === "record"
-                        ? "h-16 w-16 shrink-0"
-                        : "h-20 w-14 shrink-0"
-                    }
-                  />
-
-                  <div className="min-w-0 flex-1">
-                    <h3 className="font-semibold leading-tight text-sm truncate">
-                      {result.title}
-                    </h3>
-                    {subtitle && (
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        {subtitle}
-                      </p>
-                    )}
-                    <div className="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground">
-                      {result.year && <span>{result.year}</span>}
-                      {result.genres.length > 0 && (
-                        <span className="truncate">
-                          {result.genres.slice(0, 3).join(", ")}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="flex shrink-0 items-center gap-1">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8"
-                      onClick={() =>
-                        handleQuickAction(result, "want", false)
-                      }
-                      title="Want"
-                    >
-                      <Bookmark className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8"
-                      onClick={() =>
-                        handleQuickAction(result, "want", true)
-                      }
-                      title="Own"
-                    >
-                      <Package className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="default"
-                      size="sm"
-                      className="h-8"
-                      onClick={() => handleLog(result)}
-                    >
-                      <Plus className="mr-1 h-3.5 w-3.5" />
-                      Log
-                    </Button>
-                  </div>
-                </div>
-              </Card>
-            );
-          })}
+          {results.map((result) => (
+            <SearchResultCard
+              key={`${result.external_source}-${result.external_id}`}
+              result={result}
+              onLog={handleLog}
+            />
+          ))}
         </div>
       )}
 
@@ -218,8 +187,6 @@ export function SearchPage() {
         result={dialogResult}
         open={dialogOpen}
         onOpenChange={setDialogOpen}
-        defaultStatus={dialogDefaults.status}
-        defaultOwned={dialogDefaults.owned}
       />
     </PageShell>
   );

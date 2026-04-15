@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -18,33 +18,41 @@ import {
 import { RatingStars } from "@/components/media/RatingStars";
 import { CoverImage } from "@/components/media/CoverImage";
 import { useCreateEntry } from "@/lib/hooks/useEntries";
-import type { SearchResult, EntryStatus } from "@/types";
-import { STATUS_LABELS } from "@/types";
-import { Package, Loader2 } from "lucide-react";
+import type { SearchResult, EntryStatus, OwnershipStatus } from "@/types";
+import { MEDIA_CONFIG, MEDIA_TYPE_VERB, OWNERSHIP_LABELS } from "@/types";
+import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface EntryDialogProps {
   result: SearchResult | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  defaultStatus?: EntryStatus;
-  defaultOwned?: boolean;
 }
 
 export function EntryDialog({
   result,
   open,
   onOpenChange,
-  defaultStatus = "completed",
-  defaultOwned = false,
 }: EntryDialogProps) {
-  const [status, setStatus] = useState<EntryStatus>(defaultStatus);
-  const [owned, setOwned] = useState(defaultOwned);
+  const config = result ? MEDIA_CONFIG[result.media_type] : null;
+
+  const [status, setStatus] = useState<EntryStatus>("completed");
+  const [ownership, setOwnership] = useState<OwnershipStatus>("none");
   const [rating, setRating] = useState<number | null>(null);
   const [review, setReview] = useState("");
   const [consumedDate, setConsumedDate] = useState(
     new Date().toISOString().slice(0, 10)
   );
+
+  useEffect(() => {
+    if (config) {
+      setStatus(config.defaultStatus);
+      setOwnership(config.defaultOwnership);
+      setRating(null);
+      setReview("");
+      setConsumedDate(new Date().toISOString().slice(0, 10));
+    }
+  }, [result]);
 
   const createEntry = useCreateEntry();
 
@@ -54,20 +62,16 @@ export function EntryDialog({
     await createEntry.mutateAsync({
       searchResult: result,
       status,
-      owned,
+      ownership,
       rating,
       review: review || null,
       consumed_date: consumedDate || null,
     });
 
-    setRating(null);
-    setReview("");
-    setOwned(false);
-    setStatus("completed");
     onOpenChange(false);
   };
 
-  if (!result) return null;
+  if (!result || !config) return null;
 
   const subtitle =
     result.media_type === "record"
@@ -88,11 +92,12 @@ export function EntryDialog({
             src={result.cover_url}
             alt={result.title}
             mediaType={result.media_type}
-            className={
+            className={cn(
+              "shrink-0",
               result.media_type === "record"
-                ? "h-24 w-24 shrink-0"
-                : "h-32 w-20 shrink-0"
-            }
+                ? "h-24 w-24"
+                : "h-32 w-20"
+            )}
           />
           <div className="min-w-0 flex-1">
             <h3 className="font-semibold leading-tight line-clamp-2">{result.title}</h3>
@@ -111,42 +116,67 @@ export function EntryDialog({
         </div>
 
         <div className="mt-2 space-y-4">
-          <div className="flex gap-3">
-            <div className="flex-1">
-              <Label className="text-xs text-muted-foreground mb-1.5">
-                Status
-              </Label>
-              <Select
-                value={status}
-                onValueChange={(v) => setStatus(v as EntryStatus)}
-              >
-                <SelectTrigger className="h-9">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {(Object.entries(STATUS_LABELS) as [EntryStatus, string][]).map(
-                    ([value, label]) => (
-                      <SelectItem key={value} value={value}>
-                        {label}
+          {config.showStatus && (
+            <div className="flex gap-3">
+              <div className="flex-1">
+                <Label className="text-xs text-muted-foreground mb-1.5">
+                  Status
+                </Label>
+                <Select
+                  value={status}
+                  onValueChange={(v) => setStatus(v as EntryStatus)}
+                >
+                  <SelectTrigger className="h-9">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {config.statusOptions.map((s) => (
+                      <SelectItem key={s} value={s}>
+                        {MEDIA_TYPE_VERB[result.media_type][s]}
                       </SelectItem>
-                    )
-                  )}
-                </SelectContent>
-              </Select>
-            </div>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
-            <div className="flex-1">
-              <Label className="text-xs text-muted-foreground mb-1.5">
-                Date
-              </Label>
-              <input
-                type="date"
-                value={consumedDate}
-                onChange={(e) => setConsumedDate(e.target.value)}
-                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-              />
+              <div className="flex-1">
+                <Label className="text-xs text-muted-foreground mb-1.5">
+                  Date
+                </Label>
+                <input
+                  type="date"
+                  value={consumedDate}
+                  onChange={(e) => setConsumedDate(e.target.value)}
+                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                />
+              </div>
             </div>
-          </div>
+          )}
+
+          {config.showOwnership && (
+            <div>
+              <Label className="text-xs text-muted-foreground mb-1.5">
+                Ownership
+              </Label>
+              <div className="grid grid-cols-2 gap-1.5">
+                {config.ownershipOptions.map((o) => (
+                  <button
+                    key={o}
+                    type="button"
+                    onClick={() => setOwnership(o)}
+                    className={cn(
+                      "rounded-lg border px-3 py-2 text-sm transition-colors text-left",
+                      ownership === o
+                        ? "border-primary bg-primary/10 text-primary"
+                        : "border-border text-muted-foreground hover:bg-accent"
+                    )}
+                  >
+                    {OWNERSHIP_LABELS[o]}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div>
             <Label className="text-xs text-muted-foreground mb-1.5">
@@ -166,20 +196,6 @@ export function EntryDialog({
               )}
             </div>
           </div>
-
-          <button
-            type="button"
-            onClick={() => setOwned(!owned)}
-            className={cn(
-              "flex w-full items-center gap-2 rounded-lg border px-3 py-2.5 text-sm transition-colors",
-              owned
-                ? "border-primary bg-primary/10 text-primary"
-                : "border-border text-muted-foreground hover:bg-accent"
-            )}
-          >
-            <Package className="h-4 w-4" />
-            I own this {result.media_type === "record" ? "record" : result.media_type}
-          </button>
 
           <div>
             <Label className="text-xs text-muted-foreground mb-1.5">

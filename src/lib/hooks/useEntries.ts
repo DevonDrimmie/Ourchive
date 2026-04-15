@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
-import type { Entry, EntryStatus, Media, Profile, SearchResult } from "@/types";
+import type { Entry, EntryStatus, Media, OwnershipStatus, Profile, SearchResult } from "@/types";
 import { useAuth } from "./useAuth";
 
 async function upsertMedia(result: SearchResult): Promise<string> {
@@ -37,7 +37,7 @@ async function upsertMedia(result: SearchResult): Promise<string> {
 interface CreateEntryParams {
   searchResult: SearchResult;
   status: EntryStatus;
-  owned: boolean;
+  ownership: OwnershipStatus;
   rating?: number | null;
   review?: string | null;
   consumed_date?: string | null;
@@ -60,7 +60,7 @@ export function useCreateEntry() {
             media_id: mediaId,
             user_id: user.id,
             status: params.status,
-            owned: params.owned,
+            ownership: params.ownership,
             rating: params.rating ?? null,
             review: params.review ?? null,
             consumed_date: params.consumed_date ?? null,
@@ -152,7 +152,7 @@ export function useFeed(mediaTypeFilter?: string) {
 interface CollectionFilters {
   mediaType?: string;
   status?: string;
-  owned?: boolean;
+  ownership?: string;
   userId?: string;
   sortBy?: string;
 }
@@ -180,8 +180,12 @@ export function useCollection(filters: CollectionFilters) {
       if (filters.status && filters.status !== "all") {
         query = query.eq("status", filters.status);
       }
-      if (filters.owned !== undefined) {
-        query = query.eq("owned", filters.owned);
+      if (filters.ownership && filters.ownership !== "all") {
+        if (filters.ownership === "owned") {
+          query = query.in("ownership", ["physical", "digital"]);
+        } else {
+          query = query.eq("ownership", filters.ownership);
+        }
       }
 
       switch (filters.sortBy) {
