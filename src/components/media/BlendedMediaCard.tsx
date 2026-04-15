@@ -25,6 +25,8 @@ export interface EntryWithProfile {
 interface BlendedMediaCardProps {
   media: Media;
   items: EntryWithProfile[];
+  /** When false, review excerpts are hidden (e.g. collection grid). Home feed can pass true. */
+  showReviews?: boolean;
   className?: string;
 }
 
@@ -63,18 +65,6 @@ function TooltipNames({ profiles }: { profiles: Profile[] }) {
         ))}
       </ul>
     </>
-  );
-}
-
-function CountPill({ count }: { count: number }) {
-  if (count <= 1) return null;
-  return (
-    <span
-      className="absolute -right-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-0.5 text-[10px] font-semibold leading-none text-primary-foreground ring-2 ring-card"
-      aria-hidden
-    >
-      {count}
-    </span>
   );
 }
 
@@ -118,12 +108,17 @@ function AggregatedStatusBadges({
           return (
             <Tooltip key={status}>
               <TooltipTrigger asChild>
-                <span className="relative inline-flex cursor-default">
-                  <Badge variant={config.variant} className="gap-1 text-xs">
-                    <Icon className="h-3 w-3" />
+                <span className="inline-flex cursor-default">
+                  <Badge variant={config.variant} className="gap-1 text-xs tabular-nums">
+                    {count > 1 ? (
+                      <span className="flex h-3 w-3 items-center justify-center text-[10px] font-semibold leading-none">
+                        {count}
+                      </span>
+                    ) : (
+                      <Icon className="h-3 w-3" />
+                    )}
                     {label}
                   </Badge>
-                  <CountPill count={count} />
                 </span>
               </TooltipTrigger>
               <TooltipContent side="top" className="max-w-xs">
@@ -143,12 +138,17 @@ function AggregatedStatusBadges({
         return (
           <Tooltip key={own}>
             <TooltipTrigger asChild>
-              <span className="relative inline-flex cursor-default">
-                <Badge variant="outline" className="gap-1 text-xs">
-                  <OwnIcon className="h-3 w-3" />
+              <span className="inline-flex cursor-default">
+                <Badge variant="outline" className="gap-1 text-xs tabular-nums">
+                  {count > 1 ? (
+                    <span className="flex h-3 w-3 items-center justify-center text-[10px] font-semibold leading-none">
+                      {count}
+                    </span>
+                  ) : (
+                    <OwnIcon className="h-3 w-3" />
+                  )}
                   {ownConfig.label}
                 </Badge>
-                <CountPill count={count} />
               </span>
             </TooltipTrigger>
             <TooltipContent side="top" className="max-w-xs">
@@ -161,7 +161,39 @@ function AggregatedStatusBadges({
   );
 }
 
-export function BlendedMediaCard({ media, items, className }: BlendedMediaCardProps) {
+function StackedRatings({ items }: { items: EntryWithProfile[] }) {
+  const rated = items
+    .filter((i) => i.entry.rating != null)
+    .sort((a, b) =>
+      a.profile.display_name.localeCompare(b.profile.display_name)
+    );
+
+  if (rated.length === 0) return null;
+
+  return (
+    <div className="flex flex-col items-end gap-1 shrink-0">
+      {rated.map(({ entry, profile }) => (
+        <Tooltip key={entry.id}>
+          <TooltipTrigger asChild>
+            <span className="cursor-default">
+              <RatingStars rating={entry.rating} size="sm" />
+            </span>
+          </TooltipTrigger>
+          <TooltipContent side="left">
+            {profile.display_name}
+          </TooltipContent>
+        </Tooltip>
+      ))}
+    </div>
+  );
+}
+
+export function BlendedMediaCard({
+  media,
+  items,
+  showReviews = true,
+  className,
+}: BlendedMediaCardProps) {
   const Icon = typeIcons[media.media_type];
   const subtitle =
     media.media_type === "record"
@@ -181,9 +213,6 @@ export function BlendedMediaCard({ media, items, className }: BlendedMediaCardPr
         new Date(b.entry.updated_at).getTime() -
         new Date(a.entry.updated_at).getTime()
     );
-
-  const singleUser = items.length === 1;
-  const onlyEntry = singleUser ? items[0] : undefined;
 
   return (
     <Link to={`/media/${media.id}`}>
@@ -225,68 +254,68 @@ export function BlendedMediaCard({ media, items, className }: BlendedMediaCardPr
           </div>
 
           <div className="flex min-w-0 flex-1 flex-col gap-1.5 py-0.5">
-            <div className="flex -space-x-2 pl-1">
-              {users.map((profile, idx) => (
-                <Tooltip key={profile.id}>
-                  <TooltipTrigger asChild>
-                    <div
-                      className="relative shrink-0 rounded-full ring-2 ring-card"
-                      style={{ zIndex: users.length - idx }}
-                    >
-                      <Avatar className="h-6 w-6">
-                        {profile.avatar_url && (
-                          <AvatarImage
-                            src={profile.avatar_url}
-                            alt={profile.display_name}
-                          />
-                        )}
-                        <AvatarFallback className="text-[8px] bg-primary/20 text-primary">
-                          {profile.display_name
-                            ?.split(" ")
-                            .map((n) => n[0])
-                            .join("")
-                            .slice(0, 2)
-                            .toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                    </div>
-                  </TooltipTrigger>
-                  <TooltipContent>{profile.display_name}</TooltipContent>
-                </Tooltip>
-              ))}
-            </div>
-
-            <div>
-              <h3 className="line-clamp-2 text-sm font-semibold leading-tight group-hover:text-primary transition-colors">
-                {media.title}
-              </h3>
-
-              {subtitle && (
-                <p className="mt-0.5 text-xs text-muted-foreground truncate">
-                  {subtitle}
-                </p>
-              )}
-
-              <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
-                <Icon className="h-3 w-3 shrink-0" />
-                {media.year && <span>{media.year}</span>}
-                {media.genres.length > 0 && (
-                  <span className="truncate">
-                    {media.genres.slice(0, 2).join(", ")}
-                  </span>
-                )}
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0 flex-1">
+                <h3 className="line-clamp-2 text-sm font-semibold leading-tight group-hover:text-primary transition-colors">
+                  {media.title}
+                </h3>
+              </div>
+              <div className="flex -space-x-2 shrink-0 pt-0.5">
+                {users.map((profile, idx) => (
+                  <Tooltip key={profile.id}>
+                    <TooltipTrigger asChild>
+                      <div
+                        className="relative shrink-0 rounded-full ring-2 ring-card"
+                        style={{ zIndex: users.length - idx }}
+                      >
+                        <Avatar className="h-6 w-6">
+                          {profile.avatar_url && (
+                            <AvatarImage
+                              src={profile.avatar_url}
+                              alt={profile.display_name}
+                            />
+                          )}
+                          <AvatarFallback className="text-[8px] bg-primary/20 text-primary">
+                            {profile.display_name
+                              ?.split(" ")
+                              .map((n) => n[0])
+                              .join("")
+                              .slice(0, 2)
+                              .toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent>{profile.display_name}</TooltipContent>
+                  </Tooltip>
+                ))}
               </div>
             </div>
 
-            <AggregatedStatusBadges items={items} mediaType={media.media_type} />
-
-            {singleUser && onlyEntry?.entry.rating != null && (
-              <div className="flex justify-end">
-                <RatingStars rating={onlyEntry.entry.rating} size="sm" />
-              </div>
+            {subtitle && (
+              <p className="text-xs text-muted-foreground truncate -mt-0.5">
+                {subtitle}
+              </p>
             )}
 
-            {reviewRows.length > 0 && (
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <Icon className="h-3 w-3 shrink-0" />
+              {media.year && <span>{media.year}</span>}
+              {media.genres.length > 0 && (
+                <span className="truncate">
+                  {media.genres.slice(0, 2).join(", ")}
+                </span>
+              )}
+            </div>
+
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0 flex-1">
+                <AggregatedStatusBadges items={items} mediaType={media.media_type} />
+              </div>
+              <StackedRatings items={items} />
+            </div>
+
+            {showReviews && reviewRows.length > 0 && (
               <div className="mt-1 space-y-2 border-t border-border/50 pt-2">
                 {reviewRows.map(({ entry, profile }) => (
                   <div key={entry.id} className="flex gap-2">

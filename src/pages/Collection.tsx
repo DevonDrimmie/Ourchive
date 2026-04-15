@@ -190,6 +190,7 @@ export function CollectionPage() {
               <BlendedMediaCard
                 key={media.id}
                 media={media}
+                showReviews={false}
                 items={group.map((e) => ({
                   entry: e,
                   profile: e.profiles,
