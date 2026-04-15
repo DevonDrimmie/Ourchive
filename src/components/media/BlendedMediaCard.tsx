@@ -175,7 +175,24 @@ function StackedRatings({ items }: { items: EntryWithProfile[] }) {
       {rated.map(({ entry, profile }) => (
         <Tooltip key={entry.id}>
           <TooltipTrigger asChild>
-            <span className="cursor-default">
+            <span className="flex cursor-default items-center gap-1.5">
+              <Avatar className="h-3.5 w-3.5 shrink-0">
+                {profile.avatar_url && (
+                  <AvatarImage
+                    src={profile.avatar_url}
+                    alt=""
+                    className="object-cover"
+                  />
+                )}
+                <AvatarFallback className="text-[7px] leading-none bg-muted">
+                  {profile.display_name
+                    ?.split(" ")
+                    .map((n) => n[0])
+                    .join("")
+                    .slice(0, 2)
+                    .toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
               <RatingStars rating={entry.rating} size="sm" />
             </span>
           </TooltipTrigger>
