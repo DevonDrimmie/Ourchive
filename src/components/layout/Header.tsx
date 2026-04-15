@@ -12,6 +12,7 @@ import {
   Disc3,
   Loader2,
   Plus,
+  FileUp,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -209,6 +210,7 @@ function MobileNavLinks({ onClick }: { onClick?: () => void }) {
 
   const items = [
     { to: "/collection", icon: Library, label: "Collection" },
+    { to: "/import", icon: FileUp, label: "Import" },
   ];
 
   return (
@@ -332,6 +334,10 @@ export function Header() {
               <DropdownMenuItem onClick={() => navigate("/collection")}>
                 <Library className="mr-2 h-4 w-4" />
                 Collection
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate("/import")}>
+                <FileUp className="mr-2 h-4 w-4" />
+                Import
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem

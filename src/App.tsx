@@ -9,6 +9,7 @@ import { HomePage } from "@/pages/Home";
 import { SearchPage } from "@/pages/Search";
 import { MediaDetailPage } from "@/pages/MediaDetail";
 import { CollectionPage } from "@/pages/Collection";
+import { ImportPage } from "@/pages/Import";
 import { ProfilePage } from "@/pages/Profile";
 import { MediaDashboardPage } from "@/pages/MediaDashboard";
 import { SignUpPage } from "@/pages/SignUp";
@@ -174,6 +175,15 @@ function AppRoutes() {
           <ProtectedRoute>
             <Header />
             <CollectionPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/import"
+        element={
+          <ProtectedRoute>
+            <Header />
+            <ImportPage />
           </ProtectedRoute>
         }
       />

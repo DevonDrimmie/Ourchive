@@ -3,7 +3,7 @@ import { supabase } from "@/lib/supabase";
 import type { Entry, EntryStatus, Media, OwnershipStatus, Profile, SearchResult } from "@/types";
 import { useAuth } from "./useAuth";
 
-async function upsertMedia(result: SearchResult): Promise<string> {
+export async function upsertMedia(result: SearchResult): Promise<string> {
   if (result.external_id && result.external_source) {
     const { data: existing } = await supabase
       .from("media")
