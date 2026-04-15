@@ -81,12 +81,12 @@
   * {
     @apply border-border;
   }
-  html {
+  html, body {
     overflow-x: hidden;
-    scrollbar-gutter: stable;
+    padding-right: 0 !important;
+    margin-right: 0 !important;
   }
   body {
     @apply bg-background text-foreground;
-    overflow-x: hidden;
   }
 }
