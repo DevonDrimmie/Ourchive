@@ -8,18 +8,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import {
-  Tooltip,
-  TooltipTrigger,
-  TooltipContent,
-} from "@/components/ui/tooltip";
 import { MediaCard } from "@/components/media/MediaCard";
 import { PageShell } from "@/components/layout/PageShell";
 import { useCollection, useProfiles } from "@/lib/hooks/useEntries";
 import { Loader2 } from "lucide-react";
 import type { Media, Entry, Profile } from "@/types";
-import { cn } from "@/lib/utils";
 
 const typeFilters = [
   { value: "all", label: "All", path: "/collection" },
@@ -74,57 +67,11 @@ export function CollectionPage() {
     if (tab) navigate(tab.path);
   };
 
-  const selectedProfile = userId !== "all"
-    ? profiles?.find((p) => p.id === userId)
-    : null;
-
   return (
     <PageShell>
-      <div className="flex items-center gap-3">
-        <h1 className="text-2xl font-bold tracking-tight">Collection</h1>
-        <div className="flex items-center gap-1 ml-auto">
-          {profiles?.map((p) => {
-            const initials = p.display_name
-              ?.split(" ")
-              .map((n) => n[0])
-              .join("")
-              .slice(0, 2)
-              .toUpperCase();
-            const isActive = userId === p.id;
-            return (
-              <Tooltip key={p.id}>
-                <TooltipTrigger asChild>
-                  <button
-                    onClick={() => setUserId(isActive ? "all" : p.id)}
-                    className={cn(
-                      "rounded-full transition-all cursor-pointer",
-                      isActive
-                        ? "ring-2 ring-primary ring-offset-2 ring-offset-background"
-                        : "opacity-50 hover:opacity-100"
-                    )}
-                  >
-                    <Avatar className="h-7 w-7">
-                      {p.avatar_url && (
-                        <AvatarImage src={p.avatar_url} alt={p.display_name} />
-                      )}
-                      <AvatarFallback className="text-[9px] bg-primary/20 text-primary">
-                        {initials}
-                      </AvatarFallback>
-                    </Avatar>
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  {isActive ? `Showing ${p.display_name}'s` : p.display_name}
-                </TooltipContent>
-              </Tooltip>
-            );
-          })}
-        </div>
-      </div>
+      <h1 className="text-2xl font-bold tracking-tight">Collection</h1>
       <p className="text-sm text-muted-foreground">
-        {selectedProfile
-          ? `${selectedProfile.display_name}'s collection`
-          : "Browse all logged media"}
+        Browse all logged media
       </p>
 
       <Tabs value={mediaType} onValueChange={handleTabChange} className="mt-4">
@@ -162,6 +109,20 @@ export function CollectionPage() {
             <SelectItem value="digital">Digital</SelectItem>
             <SelectItem value="want_to_own">Want to Own</SelectItem>
             <SelectItem value="none">Not Owned</SelectItem>
+          </SelectContent>
+        </Select>
+
+        <Select value={userId} onValueChange={setUserId}>
+          <SelectTrigger className="w-32 h-8 text-xs">
+            <SelectValue placeholder="User" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Both</SelectItem>
+            {profiles?.map((p) => (
+              <SelectItem key={p.id} value={p.id}>
+                {p.display_name}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
 

@@ -84,9 +84,31 @@ export function MediaCard({
           <div className="flex min-w-0 flex-1 flex-col justify-between py-0.5">
             <div>
               <div className="flex items-start gap-2">
-                <h3 className="line-clamp-2 text-sm font-semibold leading-tight group-hover:text-primary transition-colors">
+                <h3 className="line-clamp-2 flex-1 text-sm font-semibold leading-tight group-hover:text-primary transition-colors">
                   {media.title}
                 </h3>
+                {showUser && profile && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className="shrink-0">
+                        <Avatar className="h-5 w-5">
+                          {profile.avatar_url && (
+                            <AvatarImage src={profile.avatar_url} alt={profile.display_name} />
+                          )}
+                          <AvatarFallback className="text-[8px] bg-primary/20 text-primary">
+                            {profile.display_name
+                              ?.split(" ")
+                              .map((n) => n[0])
+                              .join("")
+                              .slice(0, 2)
+                              .toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent>{profile.display_name}</TooltipContent>
+                  </Tooltip>
+                )}
               </div>
 
               {subtitle && (
@@ -114,31 +136,6 @@ export function MediaCard({
                 <RatingStars rating={entry.rating} size="sm" />
               )}
             </div>
-
-            {showUser && profile && (
-              <div className="mt-1">
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <div className="inline-block">
-                      <Avatar className="h-5 w-5">
-                        {profile.avatar_url && (
-                          <AvatarImage src={profile.avatar_url} alt={profile.display_name} />
-                        )}
-                        <AvatarFallback className="text-[8px] bg-primary/20 text-primary">
-                          {profile.display_name
-                            ?.split(" ")
-                            .map((n) => n[0])
-                            .join("")
-                            .slice(0, 2)
-                            .toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                    </div>
-                  </TooltipTrigger>
-                  <TooltipContent>{profile.display_name}</TooltipContent>
-                </Tooltip>
-              </div>
-            )}
           </div>
         </div>
       </Card>
