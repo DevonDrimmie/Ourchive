@@ -31,6 +31,9 @@ import { ProfileMediaTypeNav } from "@/components/profile/ProfileMediaTypeNav";
 
 const mediaTypes: MediaType[] = ["movie", "tv", "book", "record"];
 
+/** Order of Top 4 blocks on profile home */
+const topFourOrder: MediaType[] = ["movie", "book", "record", "tv"];
+
 export function ProfilePage() {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
@@ -206,7 +209,7 @@ export function ProfilePage() {
       <Separator className="my-6" />
 
       <div className="space-y-6">
-        {mediaTypes.map((type) => (
+        {topFourOrder.map((type) => (
           <TopFourGrid
             key={type}
             mediaType={type}
