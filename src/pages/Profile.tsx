@@ -1,14 +1,24 @@
+import { useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { PageShell } from "@/components/layout/PageShell";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { TopFourGrid } from "@/components/media/TopFourGrid";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { useTopFours } from "@/lib/hooks/useTopFours";
 import { useProfiles, useCollection } from "@/lib/hooks/useEntries";
 import { useAuth } from "@/lib/hooks/useAuth";
+import { useUpdateProfile } from "@/lib/hooks/useProfile";
 import type { MediaType, Entry, Media } from "@/types";
 import { MEDIA_TYPE_LABELS } from "@/types";
-import { Loader2, Film, Tv, BookOpen, Disc3 } from "lucide-react";
+import { Loader2, Film, Tv, BookOpen, Disc3, Camera } from "lucide-react";
 
 const mediaTypes: MediaType[] = ["movie", "tv", "book", "record"];
 
@@ -59,6 +69,10 @@ export function ProfilePage() {
     userId: id,
     status: "completed",
   });
+  const updateProfile = useUpdateProfile();
+
+  const [avatarDialogOpen, setAvatarDialogOpen] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState("");
 
   const profile = profiles?.find((p) => p.id === id);
   const isOwner = user?.id === id;
@@ -98,17 +112,45 @@ export function ProfilePage() {
     {} as Record<MediaType, number>
   );
 
+  const handleAvatarSave = () => {
+    const url = avatarUrl.trim() || null;
+    updateProfile.mutate(
+      { id: id!, avatar_url: url },
+      {
+        onSuccess: () => {
+          setAvatarDialogOpen(false);
+        },
+      }
+    );
+  };
+
+  const openAvatarDialog = () => {
+    setAvatarUrl(profile.avatar_url ?? "");
+    setAvatarDialogOpen(true);
+  };
+
   return (
     <PageShell className="max-w-2xl">
       <div className="flex items-center gap-4">
-        <Avatar className="h-16 w-16">
-          {profile.avatar_url && (
-            <AvatarImage src={profile.avatar_url} alt={profile.display_name} />
+        <button
+          onClick={isOwner ? openAvatarDialog : undefined}
+          className={isOwner ? "relative group cursor-pointer" : ""}
+          disabled={!isOwner}
+        >
+          <Avatar className="h-16 w-16">
+            {profile.avatar_url && (
+              <AvatarImage src={profile.avatar_url} alt={profile.display_name} />
+            )}
+            <AvatarFallback className="text-xl bg-primary/20 text-primary">
+              {initials}
+            </AvatarFallback>
+          </Avatar>
+          {isOwner && (
+            <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity">
+              <Camera className="h-5 w-5 text-white" />
+            </div>
           )}
-          <AvatarFallback className="text-xl bg-primary/20 text-primary">
-            {initials}
-          </AvatarFallback>
-        </Avatar>
+        </button>
         <div className="min-w-0">
           <h1 className="text-2xl font-bold tracking-tight truncate">
             {profile.display_name}
@@ -118,6 +160,72 @@ export function ProfilePage() {
           </p>
         </div>
       </div>
+
+      <Dialog open={avatarDialogOpen} onOpenChange={setAvatarDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Profile Picture</DialogTitle>
+          </DialogHeader>
+
+          <div className="flex flex-col items-center gap-4">
+            <Avatar className="h-24 w-24">
+              {avatarUrl.trim() ? (
+                <AvatarImage
+                  src={avatarUrl.trim()}
+                  alt="Preview"
+                  onError={(e) => {
+                    e.currentTarget.style.display = "none";
+                  }}
+                />
+              ) : null}
+              <AvatarFallback className="text-2xl bg-primary/20 text-primary">
+                {initials}
+              </AvatarFallback>
+            </Avatar>
+
+            <Input
+              value={avatarUrl}
+              onChange={(e) => setAvatarUrl(e.target.value)}
+              placeholder="Paste an image URL..."
+              autoFocus
+            />
+
+            <p className="text-xs text-muted-foreground text-center">
+              Use any public image URL — Gravatar, Discord, social media, etc.
+            </p>
+
+            <div className="flex w-full gap-2">
+              {profile.avatar_url && (
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => {
+                    setAvatarUrl("");
+                    updateProfile.mutate(
+                      { id: id!, avatar_url: null },
+                      { onSuccess: () => setAvatarDialogOpen(false) }
+                    );
+                  }}
+                  disabled={updateProfile.isPending}
+                >
+                  Remove
+                </Button>
+              )}
+              <Button
+                className="flex-1"
+                onClick={handleAvatarSave}
+                disabled={updateProfile.isPending}
+              >
+                {updateProfile.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  "Save"
+                )}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <div className="mt-4 grid grid-cols-4 gap-2">
         {mediaTypes.map((type) => (

@@ -33,26 +33,37 @@ const slugToMediaType: Record<string, MediaType> = {
 };
 
 const CHART_COLORS = [
-  "hsl(var(--primary))",
-  "hsl(var(--chart-2, 220 70% 50%))",
-  "hsl(var(--chart-3, 280 65% 60%))",
-  "hsl(var(--chart-4, 30 80% 55%))",
-  "hsl(var(--chart-5, 160 60% 45%))",
-  "#6366f1",
-  "#f59e0b",
-  "#10b981",
-  "#ef4444",
-  "#8b5cf6",
-  "#ec4899",
-  "#14b8a6",
+  "#4ade80",
+  "#818cf8",
+  "#f472b6",
+  "#fbbf24",
+  "#f87171",
+  "#2dd4bf",
+  "#a78bfa",
+  "#fb923c",
+  "#34d399",
+  "#60a5fa",
+  "#e879f9",
+  "#38bdf8",
 ];
 
 const STATUS_COLORS: Record<string, string> = {
-  want: "#eab308",
-  consuming: "#3b82f6",
-  completed: "hsl(var(--primary))",
-  dnf: "#ef4444",
+  want: "#facc15",
+  consuming: "#60a5fa",
+  completed: "#4ade80",
+  dnf: "#f87171",
 };
+
+const TOOLTIP_STYLE = {
+  backgroundColor: "#1a1a1f",
+  border: "1px solid #2a2a30",
+  borderRadius: 8,
+  fontSize: 12,
+  color: "#e4e4e7",
+} as const;
+
+const TICK_STYLE = { fontSize: 11, fill: "#a1a1aa" };
+const TICK_STYLE_SM = { fontSize: 10, fill: "#a1a1aa" };
 
 function ChartCard({
   title,
@@ -62,11 +73,11 @@ function ChartCard({
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-lg border border-border/50 bg-card p-4">
+    <div className="rounded-lg border border-border/50 bg-card p-4 flex flex-col min-h-0">
       <h3 className="text-sm font-semibold text-muted-foreground mb-3">
         {title}
       </h3>
-      {children}
+      <div className="flex-1 min-h-0">{children}</div>
     </div>
   );
 }
@@ -96,27 +107,19 @@ function GenreChart({ entries }: { entries: EntryWithMedia[] }) {
     );
 
   return (
-    <ResponsiveContainer width="100%" height={220}>
+    <ResponsiveContainer width="100%" height="100%" minHeight={220}>
       <BarChart data={data} layout="vertical" margin={{ left: 4, right: 16 }}>
         <XAxis type="number" hide />
         <YAxis
           type="category"
           dataKey="name"
           width={100}
-          tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
+          tick={TICK_STYLE}
           axisLine={false}
           tickLine={false}
         />
-        <Tooltip
-          contentStyle={{
-            backgroundColor: "hsl(var(--popover))",
-            border: "1px solid hsl(var(--border))",
-            borderRadius: 8,
-            fontSize: 12,
-          }}
-          labelStyle={{ color: "hsl(var(--foreground))" }}
-        />
-        <Bar dataKey="count" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
+        <Tooltip contentStyle={TOOLTIP_STYLE} cursor={{ fill: "rgba(255,255,255,0.05)" }} />
+        <Bar dataKey="count" fill="#4ade80" radius={[0, 4, 4, 0]} />
       </BarChart>
     </ResponsiveContainer>
   );
@@ -142,8 +145,8 @@ function StatusChart({ entries }: { entries: EntryWithMedia[] }) {
     );
 
   return (
-    <div className="flex items-center gap-4">
-      <ResponsiveContainer width="50%" height={180}>
+    <div className="flex items-center gap-4 h-full">
+      <ResponsiveContainer width="50%" height="100%" minHeight={180}>
         <PieChart>
           <Pie
             data={data}
@@ -154,7 +157,7 @@ function StatusChart({ entries }: { entries: EntryWithMedia[] }) {
             innerRadius={40}
             outerRadius={70}
             strokeWidth={2}
-            stroke="hsl(var(--card))"
+            stroke="#1a1a1f"
           >
             {data.map((d) => (
               <Cell
@@ -163,14 +166,7 @@ function StatusChart({ entries }: { entries: EntryWithMedia[] }) {
               />
             ))}
           </Pie>
-          <Tooltip
-            contentStyle={{
-              backgroundColor: "hsl(var(--popover))",
-              border: "1px solid hsl(var(--border))",
-              borderRadius: 8,
-              fontSize: 12,
-            }}
-          />
+          <Tooltip contentStyle={TOOLTIP_STYLE} />
         </PieChart>
       </ResponsiveContainer>
       <div className="flex flex-col gap-1.5">
@@ -218,34 +214,32 @@ function RatingChart({ entries }: { entries: EntryWithMedia[] }) {
     rated.reduce((sum, e) => sum + (e.rating ?? 0), 0) / rated.length;
 
   return (
-    <div>
+    <div className="h-full flex flex-col">
       <div className="mb-2 flex items-baseline gap-2">
         <span className="text-2xl font-bold">{avgRating.toFixed(1)}</span>
         <span className="text-sm text-muted-foreground">
           avg across {rated.length} rated
         </span>
       </div>
-      <ResponsiveContainer width="100%" height={160}>
-        <BarChart data={data} margin={{ left: -20 }}>
-          <XAxis
-            dataKey="rating"
-            tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
-            axisLine={false}
-            tickLine={false}
-          />
-          <YAxis hide />
-          <Tooltip
-            contentStyle={{
-              backgroundColor: "hsl(var(--popover))",
-              border: "1px solid hsl(var(--border))",
-              borderRadius: 8,
-              fontSize: 12,
-            }}
-            labelFormatter={(v) => `Rating: ${v}`}
-          />
-          <Bar dataKey="count" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-        </BarChart>
-      </ResponsiveContainer>
+      <div className="flex-1 min-h-0">
+        <ResponsiveContainer width="100%" height="100%" minHeight={160}>
+          <BarChart data={data} margin={{ left: -20 }}>
+            <XAxis
+              dataKey="rating"
+              tick={TICK_STYLE}
+              axisLine={false}
+              tickLine={false}
+            />
+            <YAxis hide />
+            <Tooltip
+              contentStyle={TOOLTIP_STYLE}
+              labelFormatter={(v) => `Rating: ${v}`}
+              cursor={{ fill: "rgba(255,255,255,0.05)" }}
+            />
+            <Bar dataKey="count" fill="#4ade80" radius={[4, 4, 0, 0]} />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
     </div>
   );
 }
@@ -280,34 +274,27 @@ function TimelineChart({ entries }: { entries: EntryWithMedia[] }) {
     }));
 
   return (
-    <ResponsiveContainer width="100%" height={180}>
+    <ResponsiveContainer width="100%" height="100%" minHeight={180}>
       <AreaChart data={data} margin={{ left: -20 }}>
         <CartesianGrid
           strokeDasharray="3 3"
-          stroke="hsl(var(--border))"
+          stroke="#2a2a30"
           vertical={false}
         />
         <XAxis
           dataKey="month"
-          tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
+          tick={TICK_STYLE_SM}
           axisLine={false}
           tickLine={false}
           interval="preserveStartEnd"
         />
         <YAxis hide />
-        <Tooltip
-          contentStyle={{
-            backgroundColor: "hsl(var(--popover))",
-            border: "1px solid hsl(var(--border))",
-            borderRadius: 8,
-            fontSize: 12,
-          }}
-        />
+        <Tooltip contentStyle={TOOLTIP_STYLE} cursor={{ stroke: "#4ade80", strokeOpacity: 0.3 }} />
         <Area
           type="monotone"
           dataKey="count"
-          stroke="hsl(var(--primary))"
-          fill="hsl(var(--primary))"
+          stroke="#4ade80"
+          fill="#4ade80"
           fillOpacity={0.15}
           strokeWidth={2}
         />
@@ -316,52 +303,56 @@ function TimelineChart({ entries }: { entries: EntryWithMedia[] }) {
   );
 }
 
-function YearChart({ entries }: { entries: EntryWithMedia[] }) {
-  const yearCounts: Record<number, number> = {};
+function AvgRatingByGenreChart({ entries }: { entries: EntryWithMedia[] }) {
+  const genreStats: Record<string, { total: number; count: number }> = {};
   entries.forEach((e) => {
-    if (e.media.year) {
-      const decade = Math.floor(e.media.year / 10) * 10;
-      yearCounts[decade] = (yearCounts[decade] ?? 0) + 1;
+    if (e.rating != null) {
+      (e.media.genres ?? []).forEach((g) => {
+        if (!genreStats[g]) genreStats[g] = { total: 0, count: 0 };
+        genreStats[g].total += e.rating!;
+        genreStats[g].count += 1;
+      });
     }
   });
 
-  const data = Object.entries(yearCounts)
-    .sort(([a], [b]) => Number(a) - Number(b))
-    .map(([decade, count]) => ({
-      decade: `${decade}s`,
-      count,
-    }));
+  const data = Object.entries(genreStats)
+    .filter(([, s]) => s.count >= 1)
+    .map(([name, s]) => ({
+      name,
+      avg: Math.round((s.total / s.count) * 10) / 10,
+      count: s.count,
+    }))
+    .sort((a, b) => b.avg - a.avg)
+    .slice(0, 10);
 
   if (data.length === 0)
     return (
       <p className="text-sm text-muted-foreground py-8 text-center">
-        No release year data
+        No rated entries with genre data yet
       </p>
     );
 
   return (
-    <ResponsiveContainer width="100%" height={180}>
-      <BarChart data={data} margin={{ left: -20 }}>
-        <XAxis
-          dataKey="decade"
-          tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
+    <ResponsiveContainer width="100%" height="100%" minHeight={220}>
+      <BarChart data={data} layout="vertical" margin={{ left: 4, right: 16 }}>
+        <XAxis type="number" domain={[0, "dataMax"]} hide />
+        <YAxis
+          type="category"
+          dataKey="name"
+          width={100}
+          tick={TICK_STYLE}
           axisLine={false}
           tickLine={false}
         />
-        <YAxis hide />
         <Tooltip
-          contentStyle={{
-            backgroundColor: "hsl(var(--popover))",
-            border: "1px solid hsl(var(--border))",
-            borderRadius: 8,
-            fontSize: 12,
+          contentStyle={TOOLTIP_STYLE}
+          formatter={(value: unknown, _name: unknown, props: unknown) => {
+            const p = props as { payload?: { count?: number } };
+            return [`${value} avg (${p.payload?.count ?? 0} rated)`, "Rating"];
           }}
+          cursor={{ fill: "rgba(255,255,255,0.05)" }}
         />
-        <Bar
-          dataKey="count"
-          fill="hsl(var(--chart-2, 220 70% 50%))"
-          radius={[4, 4, 0, 0]}
-        />
+        <Bar dataKey="avg" fill="#818cf8" radius={[0, 4, 4, 0]} />
       </BarChart>
     </ResponsiveContainer>
   );
@@ -395,8 +386,8 @@ function OwnershipChart({ entries }: { entries: EntryWithMedia[] }) {
     );
 
   return (
-    <div className="flex items-center gap-4">
-      <ResponsiveContainer width="50%" height={180}>
+    <div className="flex items-center gap-4 h-full">
+      <ResponsiveContainer width="50%" height="100%" minHeight={180}>
         <PieChart>
           <Pie
             data={data}
@@ -407,20 +398,13 @@ function OwnershipChart({ entries }: { entries: EntryWithMedia[] }) {
             innerRadius={40}
             outerRadius={70}
             strokeWidth={2}
-            stroke="hsl(var(--card))"
+            stroke="#1a1a1f"
           >
             {data.map((d) => (
               <Cell key={d.name} fill={d.color} />
             ))}
           </Pie>
-          <Tooltip
-            contentStyle={{
-              backgroundColor: "hsl(var(--popover))",
-              border: "1px solid hsl(var(--border))",
-              borderRadius: 8,
-              fontSize: 12,
-            }}
-          />
+          <Tooltip contentStyle={TOOLTIP_STYLE} />
         </PieChart>
       </ResponsiveContainer>
       <div className="flex flex-col gap-1.5">
@@ -565,8 +549,8 @@ export function MediaDashboardPage() {
               <GenreChart entries={entries} />
             </ChartCard>
 
-            <ChartCard title="By Decade">
-              <YearChart entries={entries} />
+            <ChartCard title="Avg Rating by Genre">
+              <AvgRatingByGenreChart entries={entries} />
             </ChartCard>
 
             <div className="sm:col-span-2">
