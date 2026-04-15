@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Film, Tv, BookOpen, Disc3, Plus, X } from "lucide-react";
+import { Film, Tv, BookOpen, Disc3, Plus, X, Loader2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -11,11 +11,10 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { supabase } from "@/lib/supabase";
 import { useSetTopFour, useRemoveTopFour } from "@/lib/hooks/useTopFours";
 import type { TopFourEntry } from "@/lib/hooks/useTopFours";
-import type { Media, MediaType } from "@/types";
+import type { MediaType, SearchResult } from "@/types";
 import { MEDIA_TYPE_LABELS } from "@/types";
 import { cn } from "@/lib/utils";
-import { useDebounce } from "@/lib/hooks/useDebounce";
-import { useQuery } from "@tanstack/react-query";
+import { useSearch } from "@/lib/hooks/useSearch";
 import { Link } from "react-router-dom";
 
 interface TopFourGridProps {
@@ -32,24 +31,35 @@ const typeIcons: Record<MediaType, typeof Film> = {
   record: Disc3,
 };
 
-function useMediaSearch(query: string, mediaType: MediaType) {
-  const debouncedQuery = useDebounce(query, 300);
+async function upsertMedia(result: SearchResult): Promise<string> {
+  if (result.external_id && result.external_source) {
+    const { data: existing } = await supabase
+      .from("media")
+      .select("id")
+      .eq("external_id", result.external_id)
+      .eq("external_source", result.external_source)
+      .single();
 
-  return useQuery({
-    queryKey: ["media-search-local", mediaType, debouncedQuery],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("media")
-        .select("*")
-        .eq("media_type", mediaType)
-        .ilike("title", `%${debouncedQuery}%`)
-        .limit(20);
+    if (existing) return existing.id;
+  }
 
-      if (error) throw error;
-      return data as Media[];
-    },
-    enabled: debouncedQuery.length >= 2,
-  });
+  const { data, error } = await supabase
+    .from("media")
+    .insert({
+      media_type: result.media_type,
+      title: result.title,
+      year: result.year,
+      cover_url: result.cover_url,
+      genres: result.genres,
+      external_id: result.external_id,
+      external_source: result.external_source,
+      metadata: result.metadata,
+    })
+    .select("id")
+    .single();
+
+  if (error) throw error;
+  return data.id;
 }
 
 export function TopFourGrid({
@@ -64,7 +74,8 @@ export function TopFourGrid({
 
   const [pickSlot, setPickSlot] = useState<number | null>(null);
   const [search, setSearch] = useState("");
-  const { data: searchResults } = useMediaSearch(
+  const [saving, setSaving] = useState(false);
+  const { data: searchResults, isLoading: searchLoading } = useSearch(
     pickSlot !== null ? search : "",
     mediaType
   );
@@ -74,16 +85,27 @@ export function TopFourGrid({
     return { slot, entry };
   });
 
-  const handlePick = async (media: Media) => {
+  const handlePick = async (result: SearchResult) => {
     if (pickSlot === null) return;
-    await setTopFour.mutateAsync({
-      userId,
-      mediaType,
-      slot: pickSlot,
-      mediaId: media.id,
-    });
+    const slot = pickSlot;
     setPickSlot(null);
     setSearch("");
+    setSaving(true);
+    try {
+      const mediaId = await upsertMedia(result);
+      setTopFour.mutate(
+        { userId, mediaType, slot, mediaId },
+        {
+          onError: (err) => {
+            console.error("Failed to set top four:", err);
+          },
+        }
+      );
+    } catch (err) {
+      console.error("Failed to upsert media:", err);
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleRemove = async (slot: number) => {
@@ -192,41 +214,46 @@ export function TopFourGrid({
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder={`Search your ${MEDIA_TYPE_LABELS[mediaType].toLowerCase()}s...`}
+            placeholder={`Search ${MEDIA_TYPE_LABELS[mediaType].toLowerCase()}s...`}
             autoFocus
           />
 
           <ScrollArea className="max-h-64">
-            {searchResults && searchResults.length > 0 ? (
+            {searchLoading && search.length >= 2 ? (
+              <div className="flex justify-center py-4">
+                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+              </div>
+            ) : searchResults && searchResults.length > 0 ? (
               <div className="space-y-1">
-                {searchResults.map((m) => {
+                {searchResults.map((r) => {
                   const subtitle =
-                    m.media_type === "record"
-                      ? (m.metadata as { artist?: string })?.artist
-                      : m.media_type === "book"
-                        ? (m.metadata as { authors?: string[] })?.authors?.join(
+                    r.media_type === "record"
+                      ? (r.metadata as { artist?: string })?.artist
+                      : r.media_type === "book"
+                        ? (r.metadata as { authors?: string[] })?.authors?.join(
                             ", "
                           )
                         : undefined;
 
                   return (
                     <button
-                      key={m.id}
-                      onClick={() => handlePick(m)}
+                      key={`${r.external_source}-${r.external_id}`}
+                      onClick={() => handlePick(r)}
+                      disabled={saving}
                       className="flex w-full items-center gap-3 rounded-md px-2 py-2 text-left hover:bg-accent transition-colors"
                     >
                       <div
                         className={cn(
                           "shrink-0 overflow-hidden rounded bg-muted",
-                          m.media_type === "record"
+                          r.media_type === "record"
                             ? "h-10 w-10"
                             : "h-12 w-8"
                         )}
                       >
-                        {m.cover_url ? (
+                        {r.cover_url ? (
                           <img
-                            src={m.cover_url}
-                            alt={m.title}
+                            src={r.cover_url}
+                            alt={r.title}
                             className="h-full w-full object-cover"
                             referrerPolicy="no-referrer"
                             crossOrigin="anonymous"
@@ -239,16 +266,16 @@ export function TopFourGrid({
                       </div>
                       <div className="min-w-0 flex-1">
                         <p className="text-sm font-medium truncate">
-                          {m.title}
+                          {r.title}
                         </p>
                         {subtitle && (
                           <p className="text-xs text-muted-foreground truncate">
                             {subtitle}
                           </p>
                         )}
-                        {m.year && (
+                        {r.year && (
                           <p className="text-xs text-muted-foreground">
-                            {m.year}
+                            {r.year}
                           </p>
                         )}
                       </div>
@@ -258,11 +285,11 @@ export function TopFourGrid({
               </div>
             ) : search.length >= 2 ? (
               <p className="py-4 text-center text-sm text-muted-foreground">
-                No results in your collection
+                No results found
               </p>
             ) : (
               <p className="py-4 text-center text-sm text-muted-foreground">
-                Type to search your collection
+                Search the catalogue
               </p>
             )}
           </ScrollArea>

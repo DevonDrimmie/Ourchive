@@ -10,6 +10,7 @@ import { SearchPage } from "@/pages/Search";
 import { MediaDetailPage } from "@/pages/MediaDetail";
 import { CollectionPage } from "@/pages/Collection";
 import { ProfilePage } from "@/pages/Profile";
+import { MediaDashboardPage } from "@/pages/MediaDashboard";
 import { Loader2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -177,6 +178,15 @@ function AppRoutes() {
           <ProtectedRoute>
             <Header />
             <ProfilePage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/profile/:id/:type"
+        element={
+          <ProtectedRoute>
+            <Header />
+            <MediaDashboardPage />
           </ProtectedRoute>
         }
       />

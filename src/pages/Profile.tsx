@@ -1,4 +1,4 @@
-import { useParams } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import { PageShell } from "@/components/layout/PageShell";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
@@ -12,6 +12,13 @@ import { Loader2, Film, Tv, BookOpen, Disc3 } from "lucide-react";
 
 const mediaTypes: MediaType[] = ["movie", "tv", "book", "record"];
 
+const mediaTypeSlugs: Record<MediaType, string> = {
+  movie: "movies",
+  tv: "tv",
+  book: "books",
+  record: "records",
+};
+
 const typeIcons: Record<MediaType, typeof Film> = {
   movie: Film,
   tv: Tv,
@@ -22,19 +29,24 @@ const typeIcons: Record<MediaType, typeof Film> = {
 function StatCard({
   type,
   count,
+  userId,
 }: {
   type: MediaType;
   count: number;
+  userId: string;
 }) {
   const Icon = typeIcons[type];
   return (
-    <div className="flex flex-col items-center gap-1 rounded-lg bg-muted/50 px-2 py-2">
+    <Link
+      to={`/profile/${userId}/${mediaTypeSlugs[type]}`}
+      className="flex flex-col items-center gap-1 rounded-lg bg-muted/50 px-2 py-2 cursor-pointer hover:bg-muted transition-colors"
+    >
       <Icon className="h-4 w-4 text-muted-foreground" />
       <p className="text-lg font-bold leading-tight">{count}</p>
       <p className="text-[10px] text-muted-foreground">
         {MEDIA_TYPE_LABELS[type]}s
       </p>
-    </div>
+    </Link>
   );
 }
 
@@ -109,7 +121,7 @@ export function ProfilePage() {
 
       <div className="mt-4 grid grid-cols-4 gap-2">
         {mediaTypes.map((type) => (
-          <StatCard key={type} type={type} count={countByType[type] ?? 0} />
+          <StatCard key={type} type={type} count={countByType[type] ?? 0} userId={id!} />
         ))}
       </div>
 

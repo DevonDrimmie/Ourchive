@@ -119,8 +119,8 @@ export const MEDIA_CONFIG: Record<MediaType, MediaTypeConfig> = {
     defaultOwnership: "none",
     showStatus: true,
     showOwnership: true,
-    primaryCta: { label: "Want to watch", status: "want", ownership: "none" },
-    secondaryCta: { label: "Log", status: "completed", ownership: "none" },
+    primaryCta: { label: "Log", status: "completed", ownership: "none" },
+    secondaryCta: { label: "Want to watch", status: "want", ownership: "none" },
   },
   book: {
     statusOptions: ["want", "consuming", "completed", "dnf"],

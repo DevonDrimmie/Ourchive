@@ -51,7 +51,7 @@ export function CoverImage({
           src && "hidden"
         )}
       >
-        <Icon className="h-12 w-12 text-muted-foreground/30" />
+        <Icon className="h-1/3 w-1/3 max-h-12 max-w-12 text-muted-foreground/30" />
       </div>
     </div>
   );

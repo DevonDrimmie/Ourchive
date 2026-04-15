@@ -3,6 +3,7 @@ import type { MediaType, SearchResult } from "@/types";
 import { searchMovies, searchTv } from "@/lib/api/tmdb";
 import { searchBooks } from "@/lib/api/openlib";
 import { searchRecords } from "@/lib/api/musicbrainz";
+import { useDebounce } from "./useDebounce";
 
 async function searchByType(
   query: string,
@@ -21,10 +22,12 @@ async function searchByType(
 }
 
 export function useSearch(query: string, mediaType: MediaType) {
+  const debouncedQuery = useDebounce(query, 400);
+
   return useQuery({
-    queryKey: ["search", mediaType, query],
-    queryFn: () => searchByType(query, mediaType),
-    enabled: query.length >= 2,
+    queryKey: ["search", mediaType, debouncedQuery],
+    queryFn: () => searchByType(debouncedQuery, mediaType),
+    enabled: debouncedQuery.length >= 2,
     staleTime: 1000 * 60 * 5,
     placeholderData: (prev) => prev,
   });
