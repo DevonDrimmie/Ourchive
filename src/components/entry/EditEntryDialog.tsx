@@ -16,51 +16,61 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { RatingStars } from "@/components/media/RatingStars";
-import { CoverImage } from "@/components/media/CoverImage";
-import { useCreateEntry } from "@/lib/hooks/useEntries";
-import type { SearchResult, EntryStatus, OwnershipStatus } from "@/types";
-import { MEDIA_CONFIG, MEDIA_TYPE_VERB, OWNERSHIP_LABELS } from "@/types";
-import { Loader2 } from "lucide-react";
+import { useUpdateEntry, useDeleteEntry } from "@/lib/hooks/useEntries";
+import type {
+  Entry,
+  MediaType,
+  EntryStatus,
+  OwnershipStatus,
+} from "@/types";
+import {
+  MEDIA_CONFIG,
+  MEDIA_TYPE_VERB,
+  OWNERSHIP_LABELS,
+} from "@/types";
+import { Loader2, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-interface EntryDialogProps {
-  result: SearchResult | null;
+interface EditEntryDialogProps {
+  entry: Entry | null;
+  mediaType: MediaType;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-export function EntryDialog({
-  result,
+export function EditEntryDialog({
+  entry,
+  mediaType,
   open,
   onOpenChange,
-}: EntryDialogProps) {
-  const config = result ? MEDIA_CONFIG[result.media_type] : null;
+}: EditEntryDialogProps) {
+  const config = MEDIA_CONFIG[mediaType];
+  const updateEntry = useUpdateEntry();
+  const deleteEntry = useDeleteEntry();
 
   const [status, setStatus] = useState<EntryStatus>("completed");
   const [ownership, setOwnership] = useState<OwnershipStatus>("none");
   const [rating, setRating] = useState<number | null>(null);
   const [review, setReview] = useState("");
-  const [consumedDate, setConsumedDate] = useState(
-    new Date().toISOString().slice(0, 10)
-  );
+  const [consumedDate, setConsumedDate] = useState("");
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   useEffect(() => {
-    if (config) {
-      setStatus(config.defaultStatus);
-      setOwnership(config.defaultOwnership);
-      setRating(null);
-      setReview("");
-      setConsumedDate(new Date().toISOString().slice(0, 10));
+    if (entry) {
+      setStatus(entry.status);
+      setOwnership(entry.ownership);
+      setRating(entry.rating);
+      setReview(entry.review ?? "");
+      setConsumedDate(entry.consumed_date ?? "");
+      setConfirmDelete(false);
     }
-  }, [result]);
+  }, [entry]);
 
-  const createEntry = useCreateEntry();
+  const handleSave = async () => {
+    if (!entry) return;
 
-  const handleSubmit = async () => {
-    if (!result) return;
-
-    await createEntry.mutateAsync({
-      searchResult: result,
+    await updateEntry.mutateAsync({
+      id: entry.id,
       status,
       ownership,
       rating,
@@ -71,51 +81,22 @@ export function EntryDialog({
     onOpenChange(false);
   };
 
-  if (!result || !config) return null;
+  const handleDelete = async () => {
+    if (!entry) return;
+    await deleteEntry.mutateAsync(entry.id);
+    onOpenChange(false);
+  };
 
-  const subtitle =
-    result.media_type === "record"
-      ? (result.metadata as { artist?: string })?.artist
-      : result.media_type === "book"
-        ? (result.metadata as { authors?: string[] })?.authors?.join(", ")
-        : undefined;
+  if (!entry) return null;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="text-lg">Log Entry</DialogTitle>
+          <DialogTitle className="text-lg">Edit Entry</DialogTitle>
         </DialogHeader>
 
-        <div className="flex gap-4">
-          <CoverImage
-            src={result.cover_url}
-            alt={result.title}
-            mediaType={result.media_type}
-            className={cn(
-              "shrink-0",
-              result.media_type === "record"
-                ? "h-24 w-24"
-                : "h-32 w-20"
-            )}
-          />
-          <div className="min-w-0 flex-1">
-            <h3 className="font-semibold leading-tight line-clamp-2">{result.title}</h3>
-            {subtitle && (
-              <p className="mt-0.5 text-sm text-muted-foreground truncate">{subtitle}</p>
-            )}
-            {result.year && (
-              <p className="text-sm text-muted-foreground">{result.year}</p>
-            )}
-            {result.genres.length > 0 && (
-              <p className="mt-1 text-xs text-muted-foreground">
-                {result.genres.slice(0, 3).join(", ")}
-              </p>
-            )}
-          </div>
-        </div>
-
-        <div className="mt-2 space-y-4">
+        <div className="space-y-4">
           {config.showStatus && (
             <div className="flex gap-3">
               <div className="flex-1">
@@ -132,7 +113,7 @@ export function EntryDialog({
                   <SelectContent>
                     {config.statusOptions.map((s) => (
                       <SelectItem key={s} value={s}>
-                        {MEDIA_TYPE_VERB[result.media_type][s]}
+                        {MEDIA_TYPE_VERB[mediaType][s]}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -207,22 +188,58 @@ export function EntryDialog({
                   value={review}
                   onChange={(e) => setReview(e.target.value)}
                   placeholder="What did you think?"
-                  className="min-h-[80px] resize-none"
+                  className="min-h-[100px] resize-none"
                 />
               </div>
             </>
           )}
 
-          <Button
-            className="w-full"
-            onClick={handleSubmit}
-            disabled={createEntry.isPending}
-          >
-            {createEntry.isPending && (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          <div className="flex gap-2">
+            {confirmDelete ? (
+              <>
+                <Button
+                  variant="destructive"
+                  className="flex-1"
+                  onClick={handleDelete}
+                  disabled={deleteEntry.isPending}
+                >
+                  {deleteEntry.isPending ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    "Confirm Delete"
+                  )}
+                </Button>
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => setConfirmDelete(false)}
+                >
+                  Cancel
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="shrink-0"
+                  onClick={() => setConfirmDelete(true)}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+                <Button
+                  className="flex-1"
+                  onClick={handleSave}
+                  disabled={updateEntry.isPending}
+                >
+                  {updateEntry.isPending && (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  )}
+                  Save Changes
+                </Button>
+              </>
             )}
-            Save Entry
-          </Button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>

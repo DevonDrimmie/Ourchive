@@ -11,6 +11,7 @@ import { MediaDetailPage } from "@/pages/MediaDetail";
 import { CollectionPage } from "@/pages/Collection";
 import { ProfilePage } from "@/pages/Profile";
 import { MediaDashboardPage } from "@/pages/MediaDashboard";
+import { SignUpPage } from "@/pages/SignUp";
 import { Loader2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -99,6 +100,10 @@ function AppRoutes() {
       <Route
         path="/login"
         element={user ? <Navigate to="/" replace /> : <LoginPage />}
+      />
+      <Route
+        path="/signup"
+        element={user ? <Navigate to="/" replace /> : <SignUpPage />}
       />
       <Route
         path="/"

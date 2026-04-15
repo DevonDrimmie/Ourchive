@@ -1,22 +1,27 @@
+import { useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { PageShell } from "@/components/layout/PageShell";
 import { CoverImage } from "@/components/media/CoverImage";
 import { RatingStars } from "@/components/media/RatingStars";
 import { StatusBadge } from "@/components/media/StatusBadge";
+import { EditEntryDialog } from "@/components/entry/EditEntryDialog";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useMediaDetail, useMediaEntries } from "@/lib/hooks/useEntries";
+import { useAuth } from "@/lib/hooks/useAuth";
 import { MEDIA_TYPE_LABELS, MEDIA_TYPE_VERB } from "@/types";
 import type { Profile, Entry, EntryStatus, MediaType } from "@/types";
-import { ArrowLeft, Loader2, Calendar } from "lucide-react";
+import { ArrowLeft, Loader2, Calendar, Pencil } from "lucide-react";
 import { format } from "date-fns";
 
 export function MediaDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const { user } = useAuth();
   const { data: media, isLoading: mediaLoading } = useMediaDetail(id!);
   const { data: entries, isLoading: entriesLoading } = useMediaEntries(id!);
+  const [editingEntry, setEditingEntry] = useState<Entry | null>(null);
 
   if (mediaLoading || entriesLoading) {
     return (
@@ -118,6 +123,8 @@ export function MediaDetailPage() {
                 .slice(0, 2)
                 .toUpperCase();
 
+              const isOwner = user?.id === entry.user_id;
+
               return (
                 <Card key={entry.id} className="border-border/50">
                   <CardContent className="pt-4">
@@ -130,7 +137,7 @@ export function MediaDetailPage() {
                           {initials}
                         </AvatarFallback>
                       </Avatar>
-                      <div>
+                      <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium">
                           {entry.profiles?.display_name}
                         </p>
@@ -138,6 +145,14 @@ export function MediaDetailPage() {
                           {MEDIA_TYPE_VERB[media.media_type as MediaType]?.[entry.status as EntryStatus]}
                         </p>
                       </div>
+                      {isOwner && (
+                        <button
+                          onClick={() => setEditingEntry(entry)}
+                          className="shrink-0 rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </button>
+                      )}
                     </div>
 
                     <StatusBadge
@@ -174,6 +189,15 @@ export function MediaDetailPage() {
       ) : (
         <p className="text-sm text-muted-foreground">No entries yet.</p>
       )}
+
+      <EditEntryDialog
+        entry={editingEntry}
+        mediaType={media.media_type as MediaType}
+        open={editingEntry !== null}
+        onOpenChange={(open) => {
+          if (!open) setEditingEntry(null);
+        }}
+      />
     </PageShell>
   );
 }
