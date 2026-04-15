@@ -124,13 +124,19 @@ export function useFeed(mediaTypeFilter?: string) {
   return useQuery({
     queryKey: ["feed", mediaTypeFilter],
     queryFn: async () => {
+      const useInner =
+        mediaTypeFilter && mediaTypeFilter !== "all";
+      const selectStr = useInner
+        ? "*, media!inner(*), profiles(*)"
+        : "*, media(*), profiles(*)";
+
       let query = supabase
         .from("entries")
-        .select("*, media(*), profiles(*)")
+        .select(selectStr)
         .order("updated_at", { ascending: false })
         .limit(50);
 
-      if (mediaTypeFilter && mediaTypeFilter !== "all") {
+      if (useInner) {
         query = query.eq("media.media_type", mediaTypeFilter);
       }
 
@@ -155,10 +161,19 @@ export function useCollection(filters: CollectionFilters) {
   return useQuery({
     queryKey: ["entries", "collection", filters],
     queryFn: async () => {
+      const useInner =
+        filters.mediaType && filters.mediaType !== "all";
+      const selectStr = useInner
+        ? "*, media!inner(*), profiles(*)"
+        : "*, media(*), profiles(*)";
+
       let query = supabase
         .from("entries")
-        .select("*, media(*), profiles(*)");
+        .select(selectStr);
 
+      if (useInner) {
+        query = query.eq("media.media_type", filters.mediaType);
+      }
       if (filters.userId) {
         query = query.eq("user_id", filters.userId);
       }
@@ -183,18 +198,9 @@ export function useCollection(filters: CollectionFilters) {
 
       const { data, error } = await query;
       if (error) throw error;
-
-      let results = (data ?? []).filter(
+      return (data ?? []).filter(
         (e: { media: Media | null }) => e.media !== null
       );
-
-      if (filters.mediaType && filters.mediaType !== "all") {
-        results = results.filter(
-          (e: { media: Media }) => e.media.media_type === filters.mediaType
-        );
-      }
-
-      return results;
     },
   });
 }
