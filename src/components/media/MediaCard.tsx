@@ -73,7 +73,6 @@ export function MediaCard({
             >
               <Icon className="h-8 w-8 text-muted-foreground/50" />
             </div>
-            )}
           </div>
 
           <div className="flex min-w-0 flex-1 flex-col justify-between py-0.5">
