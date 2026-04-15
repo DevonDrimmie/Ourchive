@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { PageShell } from "@/components/layout/PageShell";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
@@ -26,48 +26,10 @@ import { useProfiles, useCollection } from "@/lib/hooks/useEntries";
 import { useAuth } from "@/lib/hooks/useAuth";
 import { useUpdateProfile } from "@/lib/hooks/useProfile";
 import type { MediaType, Entry, Media } from "@/types";
-import { MEDIA_TYPE_LABELS } from "@/types";
-import { Loader2, Film, Tv, BookOpen, Disc3, Camera } from "lucide-react";
+import { Loader2, Camera } from "lucide-react";
+import { ProfileMediaTypeNav } from "@/components/profile/ProfileMediaTypeNav";
 
 const mediaTypes: MediaType[] = ["movie", "tv", "book", "record"];
-
-const mediaTypeSlugs: Record<MediaType, string> = {
-  movie: "movies",
-  tv: "tv",
-  book: "books",
-  record: "records",
-};
-
-const typeIcons: Record<MediaType, typeof Film> = {
-  movie: Film,
-  tv: Tv,
-  book: BookOpen,
-  record: Disc3,
-};
-
-function StatCard({
-  type,
-  count,
-  userId,
-}: {
-  type: MediaType;
-  count: number;
-  userId: string;
-}) {
-  const Icon = typeIcons[type];
-  return (
-    <Link
-      to={`/profile/${userId}/${mediaTypeSlugs[type]}`}
-      className="flex flex-col items-center gap-1 rounded-lg bg-muted/50 px-2 py-2 cursor-pointer hover:bg-muted transition-colors"
-    >
-      <Icon className="h-4 w-4 text-muted-foreground" />
-      <p className="text-lg font-bold leading-tight">{count}</p>
-      <p className="text-[10px] text-muted-foreground">
-        {MEDIA_TYPE_LABELS[type]}s
-      </p>
-    </Link>
-  );
-}
 
 export function ProfilePage() {
   const { id } = useParams<{ id: string }>();
@@ -239,11 +201,11 @@ export function ProfilePage() {
         </DialogContent>
       </Dialog>
 
-      <div className="mt-4 grid grid-cols-4 gap-2">
-        {mediaTypes.map((type) => (
-          <StatCard key={type} type={type} count={countByType[type] ?? 0} userId={id!} />
-        ))}
-      </div>
+      <ProfileMediaTypeNav
+        className="mt-4"
+        userId={id!}
+        countByType={countByType}
+      />
 
       <Separator className="my-6" />
 

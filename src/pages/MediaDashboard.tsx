@@ -12,12 +12,15 @@ import {
   CollectionWantList,
 } from "@/components/media/CollectionTabLists";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ProfileMediaTypeNav } from "@/components/profile/ProfileMediaTypeNav";
 import { useTopFours } from "@/lib/hooks/useTopFours";
 import { useProfiles, useCollection } from "@/lib/hooks/useEntries";
 import { useAuth } from "@/lib/hooks/useAuth";
-import type { MediaType } from "@/types";
+import type { MediaType, Entry, Media } from "@/types";
 import { MEDIA_TYPE_LABELS } from "@/types";
 import { Loader2, ChevronLeft } from "lucide-react";
+
+const ALL_MEDIA_TYPES: MediaType[] = ["movie", "tv", "book", "record"];
 
 const slugToMediaType: Record<string, MediaType> = {
   movies: "movie",
@@ -35,6 +38,10 @@ export function MediaDashboardPage() {
   const mediaType = typeSlug ? slugToMediaType[typeSlug] : undefined;
 
   const { data: allEntries } = useCollection({ userId: id });
+  const { data: completedForNav } = useCollection({
+    userId: id,
+    status: "completed",
+  });
 
   const profile = profiles?.find((p) => p.id === id);
   const isOwner = user?.id === id;
@@ -76,6 +83,16 @@ export function MediaDashboardPage() {
 
   const emptyLabel = MEDIA_TYPE_LABELS[mediaType].toLowerCase();
 
+  const countByType = ALL_MEDIA_TYPES.reduce(
+    (acc, type) => {
+      acc[type] = (completedForNav ?? []).filter(
+        (e: Entry & { media: Media }) => e.media?.media_type === type
+      ).length;
+      return acc;
+    },
+    {} as Record<MediaType, number>
+  );
+
   return (
     <PageShell className="max-w-2xl">
       <div className="flex items-center gap-4">
@@ -114,6 +131,13 @@ export function MediaDashboardPage() {
           </div>
         </div>
       </div>
+
+      <ProfileMediaTypeNav
+        className="mt-4"
+        userId={id!}
+        countByType={countByType}
+        activeMediaType={mediaType}
+      />
 
       <div className="mt-4 flex items-baseline gap-2">
         <h2 className="text-lg font-bold">{MEDIA_TYPE_LABELS[mediaType]}s</h2>

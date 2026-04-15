@@ -70,47 +70,8 @@ function ChartCard({
   );
 }
 
-function GenreChart({ entries }: { entries: EntryWithMedia[] }) {
-  const genreCounts: Record<string, number> = {};
-  entries.forEach((e) => {
-    (e.media.genres ?? []).forEach((g) => {
-      genreCounts[g] = (genreCounts[g] ?? 0) + 1;
-    });
-  });
-
-  const data = Object.entries(genreCounts)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 10)
-    .map(([name, count]) => ({ name, count }));
-
-  if (data.length === 0)
-    return (
-      <p className="text-sm text-muted-foreground py-8 text-center">
-        No genre data yet
-      </p>
-    );
-
-  return (
-    <ResponsiveContainer width="100%" height="100%" minHeight={220}>
-      <BarChart data={data} layout="vertical" margin={{ left: 4, right: 16 }}>
-        <XAxis type="number" hide />
-        <YAxis
-          type="category"
-          dataKey="name"
-          width={100}
-          tick={TICK_STYLE}
-          axisLine={false}
-          tickLine={false}
-        />
-        <Tooltip
-          contentStyle={TOOLTIP_STYLE}
-          cursor={{ fill: "rgba(255,255,255,0.05)" }}
-        />
-        <Bar dataKey="count" fill="#4ade80" radius={[0, 4, 4, 0]} />
-      </BarChart>
-    </ResponsiveContainer>
-  );
-}
+/** Half-star buckets from 0.5 → 5 (app rating scale). */
+const RATING_BUCKETS = [0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5] as const;
 
 function StatusChart({ entries }: { entries: EntryWithMedia[] }) {
   const statusCounts: Record<string, number> = {};
@@ -182,9 +143,9 @@ function RatingChart({ entries }: { entries: EntryWithMedia[] }) {
     }
   });
 
-  const data = Array.from({ length: 10 }, (_, i) => ({
-    rating: i + 1,
-    count: ratingCounts[i + 1] ?? 0,
+  const data = RATING_BUCKETS.map((rating) => ({
+    rating,
+    count: ratingCounts[rating] ?? 0,
   }));
 
   const hasRatings = entries.some((e) => e.rating != null);
@@ -209,12 +170,13 @@ function RatingChart({ entries }: { entries: EntryWithMedia[] }) {
       </div>
       <div className="flex-1 min-h-0">
         <ResponsiveContainer width="100%" height="100%" minHeight={160}>
-          <BarChart data={data} margin={{ left: -20 }}>
+          <BarChart data={data} margin={{ left: -12, right: 4 }}>
             <XAxis
               dataKey="rating"
               tick={TICK_STYLE}
               axisLine={false}
               tickLine={false}
+              tickFormatter={(v) => String(v)}
             />
             <YAxis hide />
             <Tooltip
@@ -292,56 +254,93 @@ function TimelineChart({ entries }: { entries: EntryWithMedia[] }) {
   );
 }
 
-function AvgRatingByGenreChart({ entries }: { entries: EntryWithMedia[] }) {
-  const genreStats: Record<string, { total: number; count: number }> = {};
+/** Top genres by title count; bar length = avg rating (0–5). Tooltip shows titles + avg. */
+function TopGenresAvgChart({ entries }: { entries: EntryWithMedia[] }) {
+  const genreCounts: Record<string, number> = {};
   entries.forEach((e) => {
-    if (e.rating != null) {
-      (e.media.genres ?? []).forEach((g) => {
-        if (!genreStats[g]) genreStats[g] = { total: 0, count: 0 };
-        genreStats[g].total += e.rating!;
-        genreStats[g].count += 1;
-      });
-    }
+    (e.media.genres ?? []).forEach((g) => {
+      genreCounts[g] = (genreCounts[g] ?? 0) + 1;
+    });
   });
 
-  const data = Object.entries(genreStats)
-    .filter(([, s]) => s.count >= 1)
-    .map(([name, s]) => ({
-      name,
-      avg: Math.round((s.total / s.count) * 10) / 10,
-      count: s.count,
-    }))
-    .sort((a, b) => b.avg - a.avg)
-    .slice(0, 10);
+  const topNames = Object.entries(genreCounts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 10)
+    .map(([name]) => name);
 
-  if (data.length === 0)
+  if (topNames.length === 0)
     return (
       <p className="text-sm text-muted-foreground py-8 text-center">
-        No rated entries with genre data yet
+        No genre data yet
       </p>
     );
 
+  const ratingAgg: Record<string, { sum: number; n: number }> = {};
+  entries.forEach((e) => {
+    const r = e.rating;
+    if (r == null) return;
+    (e.media.genres ?? []).forEach((g) => {
+      if (!topNames.includes(g)) return;
+      if (!ratingAgg[g]) ratingAgg[g] = { sum: 0, n: 0 };
+      ratingAgg[g].sum += r;
+      ratingAgg[g].n += 1;
+    });
+  });
+
+  const data = topNames.map((name) => {
+    const count = genreCounts[name] ?? 0;
+    const agg = ratingAgg[name];
+    const avg =
+      agg && agg.n > 0 ? Math.round((agg.sum / agg.n) * 10) / 10 : null;
+    return {
+      name,
+      count,
+      avg,
+      barValue: avg ?? 0,
+    };
+  });
+
+  const chartHeight = Math.max(260, data.length * 34);
+
   return (
-    <ResponsiveContainer width="100%" height="100%" minHeight={220}>
-      <BarChart data={data} layout="vertical" margin={{ left: 4, right: 16 }}>
-        <XAxis type="number" domain={[0, "dataMax"]} hide />
+    <ResponsiveContainer width="100%" height="100%" minHeight={chartHeight}>
+      <BarChart
+        data={data}
+        layout="vertical"
+        margin={{ left: 4, right: 20, top: 4, bottom: 4 }}
+      >
+        <XAxis
+          type="number"
+          domain={[0, 5]}
+          tick={TICK_STYLE}
+          axisLine={false}
+          tickLine={false}
+        />
         <YAxis
           type="category"
           dataKey="name"
-          width={100}
+          width={118}
           tick={TICK_STYLE}
           axisLine={false}
           tickLine={false}
         />
         <Tooltip
           contentStyle={TOOLTIP_STYLE}
-          formatter={(value: unknown, _name: unknown, props: unknown) => {
-            const p = props as { payload?: { count?: number } };
-            return [`${value} avg (${p.payload?.count ?? 0} rated)`, "Rating"];
+          formatter={(
+            _value: unknown,
+            _label: unknown,
+            item: { payload?: { count: number; avg: number | null } }
+          ) => {
+            const p = item.payload;
+            if (!p) return ["", ""];
+            return [
+              `${p.count} title${p.count === 1 ? "" : "s"} · avg ${p.avg != null ? p.avg.toFixed(1) : "—"}`,
+              "",
+            ];
           }}
           cursor={{ fill: "rgba(255,255,255,0.05)" }}
         />
-        <Bar dataKey="avg" fill="#818cf8" radius={[0, 4, 4, 0]} />
+        <Bar dataKey="barValue" fill="#818cf8" radius={[0, 4, 4, 0]} />
       </BarChart>
     </ResponsiveContainer>
   );
@@ -437,13 +436,11 @@ export function MediaCollectionInsights({
         <RatingChart entries={entries} />
       </ChartCard>
 
-      <ChartCard title="Top Genres">
-        <GenreChart entries={entries} />
-      </ChartCard>
-
-      <ChartCard title="Avg Rating by Genre">
-        <AvgRatingByGenreChart entries={entries} />
-      </ChartCard>
+      <div className="sm:col-span-2">
+        <ChartCard title="Top genres & avg rating">
+          <TopGenresAvgChart entries={entries} />
+        </ChartCard>
+      </div>
 
       <div className="sm:col-span-2">
         <ChartCard title="Activity Over Time">
