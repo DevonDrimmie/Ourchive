@@ -53,6 +53,9 @@ function getActionText(entry: Entry, media: Media, profile: Profile): string {
   if (entry.status === "want") {
     return `${name} wants this ${thing}`;
   }
+  if (entry.status === "dnf") {
+    return `${name} did not finish this ${thing}`;
+  }
   if (entry.status === "consuming") {
     const verb =
       media.media_type === "book"

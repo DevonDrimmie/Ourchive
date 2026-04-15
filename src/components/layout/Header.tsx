@@ -43,12 +43,14 @@ const statusColors: Record<EntryStatus, string> = {
   want: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30",
   consuming: "bg-blue-500/20 text-blue-400 border-blue-500/30",
   completed: "bg-primary/20 text-primary border-primary/30",
+  dnf: "bg-red-500/20 text-red-400 border-red-500/30",
 };
 
 const statusLabels: Record<EntryStatus, string> = {
   want: "Want",
   consuming: "In Progress",
   completed: "Done",
+  dnf: "DNF",
 };
 
 function SearchResultRow({

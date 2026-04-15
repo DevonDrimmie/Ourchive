@@ -1,5 +1,5 @@
 import { Badge } from "@/components/ui/badge";
-import { Package, Eye, Clock, Bookmark, Disc3, Monitor } from "lucide-react";
+import { Package, Eye, Clock, Bookmark, Disc3, Monitor, Ban } from "lucide-react";
 import type { EntryStatus, OwnershipStatus } from "@/types";
 import { cn } from "@/lib/utils";
 
@@ -16,6 +16,7 @@ const statusConfig: Record<
   want: { label: "Want", icon: Bookmark, variant: "outline" },
   consuming: { label: "In Progress", icon: Clock, variant: "secondary" },
   completed: { label: "Completed", icon: Eye, variant: "default" },
+  dnf: { label: "DNF", icon: Ban, variant: "outline" },
 };
 
 const ownershipConfig: Record<

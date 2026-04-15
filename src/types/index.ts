@@ -1,6 +1,6 @@
 export type MediaType = "movie" | "tv" | "book" | "record";
 
-export type EntryStatus = "want" | "consuming" | "completed";
+export type EntryStatus = "want" | "consuming" | "completed" | "dnf";
 
 export type OwnershipStatus = "none" | "want_to_own" | "physical" | "digital";
 
@@ -71,6 +71,7 @@ export const STATUS_LABELS: Record<EntryStatus, string> = {
   want: "Want",
   consuming: "In Progress",
   completed: "Completed",
+  dnf: "DNF",
 };
 
 export const OWNERSHIP_LABELS: Record<OwnershipStatus, string> = {
@@ -81,14 +82,10 @@ export const OWNERSHIP_LABELS: Record<OwnershipStatus, string> = {
 };
 
 export const MEDIA_TYPE_VERB: Record<MediaType, Record<EntryStatus, string>> = {
-  movie: { want: "Want to watch", consuming: "Watching", completed: "Watched" },
-  tv: { want: "Want to watch", consuming: "Watching", completed: "Watched" },
-  book: { want: "Want to read", consuming: "Reading", completed: "Read" },
-  record: {
-    want: "Want to listen",
-    consuming: "Listening",
-    completed: "Listened",
-  },
+  movie: { want: "Want to watch", consuming: "Watching", completed: "Watched", dnf: "Did not finish" },
+  tv: { want: "Want to watch", consuming: "Watching", completed: "Watched", dnf: "Did not finish" },
+  book: { want: "Want to read", consuming: "Reading", completed: "Read", dnf: "Did not finish" },
+  record: { want: "Want to listen", consuming: "Listening", completed: "Listened", dnf: "Did not finish" },
 };
 
 // --- Per-media-type configuration ---
@@ -106,7 +103,7 @@ export interface MediaTypeConfig {
 
 export const MEDIA_CONFIG: Record<MediaType, MediaTypeConfig> = {
   movie: {
-    statusOptions: ["want", "consuming", "completed"],
+    statusOptions: ["want", "consuming", "completed", "dnf"],
     ownershipOptions: ["none", "want_to_own", "physical", "digital"],
     defaultStatus: "want",
     defaultOwnership: "none",
@@ -116,7 +113,7 @@ export const MEDIA_CONFIG: Record<MediaType, MediaTypeConfig> = {
     secondaryCta: { label: "Want to watch", status: "want", ownership: "none" },
   },
   tv: {
-    statusOptions: ["want", "consuming", "completed"],
+    statusOptions: ["want", "consuming", "completed", "dnf"],
     ownershipOptions: ["none", "want_to_own", "physical", "digital"],
     defaultStatus: "want",
     defaultOwnership: "none",
@@ -126,7 +123,7 @@ export const MEDIA_CONFIG: Record<MediaType, MediaTypeConfig> = {
     secondaryCta: { label: "Log", status: "completed", ownership: "none" },
   },
   book: {
-    statusOptions: ["want", "consuming", "completed"],
+    statusOptions: ["want", "consuming", "completed", "dnf"],
     ownershipOptions: ["none", "want_to_own", "physical", "digital"],
     defaultStatus: "want",
     defaultOwnership: "none",
