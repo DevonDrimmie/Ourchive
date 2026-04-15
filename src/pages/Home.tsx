@@ -106,82 +106,84 @@ function FeedCard({ entry }: { entry: FeedEntry }) {
   });
 
   return (
-    <Link to={`/media/${media.id}`}>
-      <Card className="group gap-0 py-0 overflow-hidden border-border/50 bg-card hover:border-primary/30 transition-all duration-200">
-        <div className="flex items-center gap-2 px-3 pt-3 pb-2">
-          <Avatar className="h-6 w-6">
-            {profile.avatar_url && (
-              <AvatarImage src={profile.avatar_url} alt={profile.display_name} />
-            )}
-            <AvatarFallback className="text-[10px] bg-primary/20 text-primary">
-              {initials}
-            </AvatarFallback>
-          </Avatar>
-          <p className="text-xs text-muted-foreground flex-1 truncate">
-            {getActionText(entry, media, profile)}
-          </p>
-          <span className="text-[10px] text-muted-foreground/60 shrink-0">
-            {timeAgo}
-          </span>
-        </div>
+    <div>
+      <div className="flex items-center gap-2 mb-2">
+        <Avatar className="h-5 w-5">
+          {profile.avatar_url && (
+            <AvatarImage src={profile.avatar_url} alt={profile.display_name} />
+          )}
+          <AvatarFallback className="text-[9px] bg-primary/20 text-primary">
+            {initials}
+          </AvatarFallback>
+        </Avatar>
+        <p className="text-sm text-foreground flex-1 truncate">
+          {getActionText(entry, media, profile)}
+        </p>
+        <span className="text-xs text-muted-foreground shrink-0">
+          {timeAgo}
+        </span>
+      </div>
 
-        <div className="flex gap-3 px-3 pb-3">
-          <div
-            className={cn(
-              "relative shrink-0 overflow-hidden rounded-md bg-muted",
-              media.media_type === "record" ? "h-20 w-20" : "h-24 w-16"
-            )}
-          >
-            {media.cover_url ? (
-              <img
-                src={media.cover_url}
-                alt={media.title}
-                className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-105"
-                loading="lazy"
-                referrerPolicy="no-referrer"
-                crossOrigin="anonymous"
-                onError={(e) => {
-                  e.currentTarget.style.display = "none";
-                  e.currentTarget.nextElementSibling?.classList.remove("hidden");
-                }}
-              />
-            ) : null}
+      <Link to={`/media/${media.id}`}>
+        <Card className="group gap-0 py-0 overflow-hidden border-border/50 bg-card hover:border-primary/30 transition-all duration-200">
+          <div className="flex gap-3 p-3">
             <div
               className={cn(
-                "absolute inset-0 flex items-center justify-center",
-                media.cover_url && "hidden"
+                "relative shrink-0 overflow-hidden rounded-md bg-muted",
+                media.media_type === "record" ? "h-20 w-20" : "h-24 w-16"
               )}
             >
-              <Icon className="h-6 w-6 text-muted-foreground/30" />
+              {media.cover_url ? (
+                <img
+                  src={media.cover_url}
+                  alt={media.title}
+                  className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-105"
+                  loading="lazy"
+                  referrerPolicy="no-referrer"
+                  crossOrigin="anonymous"
+                  onError={(e) => {
+                    e.currentTarget.style.display = "none";
+                    e.currentTarget.nextElementSibling?.classList.remove("hidden");
+                  }}
+                />
+              ) : null}
+              <div
+                className={cn(
+                  "absolute inset-0 flex items-center justify-center",
+                  media.cover_url && "hidden"
+                )}
+              >
+                <Icon className="h-6 w-6 text-muted-foreground/30" />
+              </div>
             </div>
-          </div>
 
-          <div className="flex min-w-0 flex-1 flex-col justify-center">
-            <h3 className="text-sm font-semibold leading-tight line-clamp-2 group-hover:text-primary transition-colors">
-              {media.title}
-            </h3>
-            {subtitle && (
-              <p className="mt-0.5 text-xs text-muted-foreground truncate">
-                {subtitle}
-              </p>
-            )}
-            <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
-              {media.year && <span>{media.year}</span>}
-              {media.genres.length > 0 && (
-                <span className="truncate">
-                  {media.genres.slice(0, 2).join(", ")}
-                </span>
+            <div className="flex min-w-0 flex-1 flex-col justify-center">
+              <h3 className="text-sm font-semibold leading-tight line-clamp-2 group-hover:text-primary transition-colors">
+                {media.title}
+              </h3>
+              {subtitle && (
+                <p className="mt-0.5 text-xs text-muted-foreground truncate">
+                  {subtitle}
+                </p>
+              )}
+              <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
+                {media.year && <span>{media.year}</span>}
+                {media.genres.length > 0 && (
+                  <span className="truncate">
+                    {media.genres.slice(0, 2).join(", ")}
+                  </span>
+                )}
+              </div>
+              {entry.rating != null && (
+                <div className="mt-1.5">
+                  <RatingStars rating={entry.rating} size="sm" />
+                </div>
               )}
             </div>
-            {entry.rating != null && (
-              <div className="mt-1.5">
-                <RatingStars rating={entry.rating} size="sm" />
-              </div>
-            )}
           </div>
-        </div>
-      </Card>
-    </Link>
+        </Card>
+      </Link>
+    </div>
   );
 }
 
@@ -229,9 +231,11 @@ export function HomePage() {
           <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
         </div>
       ) : entries && entries.length > 0 ? (
-        <div className="mt-4 flex flex-col gap-3">
+        <div className="mt-4 flex flex-col divide-y divide-border/50">
           {entries.map((entry: FeedEntry) => (
-            <FeedCard key={entry.id} entry={entry} />
+            <div key={entry.id} className="py-4 first:pt-0">
+              <FeedCard entry={entry} />
+            </div>
           ))}
         </div>
       ) : (
