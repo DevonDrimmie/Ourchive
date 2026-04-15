@@ -36,10 +36,6 @@ export function ProfilePage() {
   const { user } = useAuth();
   const { data: profiles, isLoading: profilesLoading } = useProfiles();
   const { data: topFours, isLoading: topFoursLoading } = useTopFours(id!);
-  const { data: completedEntries } = useCollection({
-    userId: id,
-    status: "completed",
-  });
   const { data: allEntries } = useCollection({ userId: id });
   const updateProfile = useUpdateProfile();
 
@@ -76,7 +72,7 @@ export function ProfilePage() {
 
   const countByType = mediaTypes.reduce(
     (acc, type) => {
-      acc[type] = (completedEntries ?? []).filter(
+      acc[type] = (allEntries ?? []).filter(
         (e: Entry & { media: Media }) => e.media?.media_type === type
       ).length;
       return acc;

@@ -38,10 +38,6 @@ export function MediaDashboardPage() {
   const mediaType = typeSlug ? slugToMediaType[typeSlug] : undefined;
 
   const { data: allEntries } = useCollection({ userId: id });
-  const { data: completedForNav } = useCollection({
-    userId: id,
-    status: "completed",
-  });
 
   const profile = profiles?.find((p) => p.id === id);
   const isOwner = user?.id === id;
@@ -85,7 +81,7 @@ export function MediaDashboardPage() {
 
   const countByType = ALL_MEDIA_TYPES.reduce(
     (acc, type) => {
-      acc[type] = (completedForNav ?? []).filter(
+      acc[type] = (allEntries ?? []).filter(
         (e: Entry & { media: Media }) => e.media?.media_type === type
       ).length;
       return acc;
