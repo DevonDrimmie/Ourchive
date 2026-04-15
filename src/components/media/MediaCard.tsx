@@ -59,11 +59,20 @@ export function MediaCard({
                 loading="lazy"
                 referrerPolicy="no-referrer"
                 crossOrigin="anonymous"
+                onError={(e) => {
+                  e.currentTarget.style.display = "none";
+                  e.currentTarget.nextElementSibling?.classList.remove("hidden");
+                }}
               />
-            ) : (
-              <div className="flex h-full w-full items-center justify-center">
-                <Icon className="h-8 w-8 text-muted-foreground/50" />
-              </div>
+            ) : null}
+            <div
+              className={cn(
+                "flex h-full w-full items-center justify-center",
+                media.cover_url && "hidden"
+              )}
+            >
+              <Icon className="h-8 w-8 text-muted-foreground/50" />
+            </div>
             )}
           </div>
 
