@@ -118,8 +118,8 @@ function FeedCard({ entry }: { entry: FeedEntry }) {
   const hasReview = reviewText.length > 0;
 
   return (
-    <div>
-      <div className="flex items-center gap-2 mb-2">
+    <div className="w-full min-w-0">
+      <div className="flex min-w-0 items-center gap-2 mb-2">
         <Link to={`/profile/${profile.id}`} className="shrink-0">
           <Avatar className="h-5 w-5 hover:opacity-80 transition-opacity">
             {profile.avatar_url && (
@@ -145,19 +145,22 @@ function FeedCard({ entry }: { entry: FeedEntry }) {
         </span>
       </div>
 
-      <Link to={`/media/${media.id}`}>
-        <Card className="group gap-0 py-0 overflow-hidden border-border/50 bg-card hover:border-primary/30 transition-all duration-200">
+      <Link
+        to={`/media/${media.id}`}
+        className="block w-full min-w-0"
+      >
+        <Card className="group min-w-0 gap-0 py-0 overflow-hidden border-border/50 bg-card hover:border-primary/30 transition-all duration-200">
           <div
             className={cn(
-              "p-3",
+              "min-w-0 p-3",
               hasReview &&
                 "flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-4"
             )}
           >
             <div
               className={cn(
-                "flex gap-3 items-start",
-                hasReview && "min-w-0 sm:max-w-[min(100%,28rem)] sm:shrink-0"
+                "flex min-w-0 gap-3 items-start",
+                hasReview && "sm:max-w-[min(100%,28rem)] sm:shrink-0"
               )}
             >
               <div
@@ -220,7 +223,7 @@ function FeedCard({ entry }: { entry: FeedEntry }) {
                 className="min-w-0 flex-1 border-t border-border/50 pt-3 sm:border-t-0 sm:border-l sm:border-border/50 sm:pt-0 sm:pl-4"
                 title={reviewText}
               >
-                <p className="text-xs leading-relaxed text-foreground line-clamp-5 whitespace-pre-wrap sm:line-clamp-12 sm:max-h-44 sm:overflow-y-auto">
+                <p className="min-w-0 wrap-break-word text-xs leading-relaxed text-foreground line-clamp-5 whitespace-pre-wrap sm:line-clamp-12 sm:max-h-44 sm:overflow-y-auto">
                   {reviewText}
                 </p>
               </div>

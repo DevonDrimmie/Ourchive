@@ -43,14 +43,14 @@ export function MediaCard({
         : undefined;
 
   return (
-    <Link to={`/media/${media.id}`}>
+    <Link to={`/media/${media.id}`} className="block w-full min-w-0">
       <Card
         className={cn(
-          "group overflow-hidden border-border/50 bg-card py-0 gap-0 hover:border-primary/30 transition-all duration-200",
+          "group min-w-0 overflow-hidden border-border/50 bg-card py-0 gap-0 hover:border-primary/30 transition-all duration-200",
           className
         )}
       >
-        <div className="flex gap-3 p-3">
+        <div className="flex min-w-0 gap-3 p-3">
           <div
             className={cn(
               "relative shrink-0 overflow-hidden rounded-md bg-muted",
@@ -88,9 +88,9 @@ export function MediaCard({
           </div>
 
           <div className="flex min-w-0 flex-1 flex-col justify-between py-0.5">
-            <div>
-              <div className="flex items-start gap-2">
-                <h3 className="line-clamp-2 flex-1 text-sm font-semibold leading-tight group-hover:text-primary transition-colors">
+            <div className="min-w-0">
+              <div className="flex min-w-0 items-start gap-2">
+                <h3 className="min-w-0 flex-1 line-clamp-2 text-sm font-semibold leading-tight group-hover:text-primary transition-colors">
                   {media.title}
                 </h3>
                 {showUser && profile && (
@@ -133,7 +133,7 @@ export function MediaCard({
               </div>
             </div>
 
-            <div className="mt-2 flex flex-wrap items-center justify-between gap-1">
+            <div className="mt-2 flex min-w-0 flex-wrap items-center justify-between gap-1">
               {entry && (
                 <StatusBadge status={entry.status} ownership={entry.ownership} mediaType={media.media_type} />
               )}
