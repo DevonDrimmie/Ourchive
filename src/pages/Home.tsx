@@ -151,13 +151,13 @@ function FeedCard({ entry }: { entry: FeedEntry }) {
             className={cn(
               "p-3",
               hasReview &&
-                "flex flex-col gap-3 sm:flex-row sm:items-stretch sm:gap-4"
+                "flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-4"
             )}
           >
             <div
               className={cn(
-                "flex gap-3",
-                hasReview ? "min-w-0 flex-1" : "items-center"
+                "flex gap-3 items-start",
+                hasReview && "min-w-0 sm:max-w-[min(100%,28rem)] sm:shrink-0"
               )}
             >
               <div
@@ -190,7 +190,7 @@ function FeedCard({ entry }: { entry: FeedEntry }) {
                 </div>
               </div>
 
-              <div className="flex min-w-0 flex-1 flex-col justify-center">
+              <div className="flex min-w-0 flex-1 flex-col justify-start">
                 <h3 className="text-sm font-semibold leading-tight line-clamp-2 group-hover:text-primary transition-colors">
                   {media.title}
                 </h3>
@@ -217,10 +217,10 @@ function FeedCard({ entry }: { entry: FeedEntry }) {
 
             {hasReview && (
               <div
-                className="min-w-0 border-t border-border/50 pt-3 sm:w-[min(100%,20rem)] sm:shrink-0 sm:border-t-0 sm:border-l sm:pt-0 sm:pl-4"
+                className="min-w-0 flex-1 border-t border-border/50 pt-3 sm:border-t-0 sm:border-l sm:border-border/50 sm:pt-0 sm:pl-4"
                 title={reviewText}
               >
-                <p className="text-xs leading-relaxed text-muted-foreground line-clamp-5 whitespace-pre-wrap sm:line-clamp-12 sm:max-h-44 sm:overflow-y-auto">
+                <p className="text-xs leading-relaxed text-foreground line-clamp-5 whitespace-pre-wrap sm:line-clamp-12 sm:max-h-44 sm:overflow-y-auto">
                   {reviewText}
                 </p>
               </div>
