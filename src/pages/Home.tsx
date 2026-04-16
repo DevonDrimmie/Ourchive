@@ -109,9 +109,13 @@ function FeedCard({ entry }: { entry: FeedEntry }) {
         ? (media.metadata as { authors?: string[] })?.authors?.join(", ")
         : (media.metadata as { director?: string })?.director;
 
-  const timeAgo = formatDistanceToNow(new Date(entry.updated_at), {
+  const feedTime = entry.feed_bumped_at ?? entry.updated_at;
+  const timeAgo = formatDistanceToNow(new Date(feedTime), {
     addSuffix: true,
   });
+
+  const reviewText = entry.review?.trim() ?? "";
+  const hasReview = reviewText.length > 0;
 
   return (
     <div>
@@ -143,60 +147,84 @@ function FeedCard({ entry }: { entry: FeedEntry }) {
 
       <Link to={`/media/${media.id}`}>
         <Card className="group gap-0 py-0 overflow-hidden border-border/50 bg-card hover:border-primary/30 transition-all duration-200">
-          <div className="flex gap-3 p-3">
+          <div
+            className={cn(
+              "p-3",
+              hasReview &&
+                "flex flex-col gap-3 sm:flex-row sm:items-stretch sm:gap-4"
+            )}
+          >
             <div
               className={cn(
-                "relative shrink-0 overflow-hidden rounded-md bg-muted",
-                media.media_type === "record" ? "h-20 w-20" : "h-24 w-16"
+                "flex gap-3",
+                hasReview ? "min-w-0 flex-1" : "items-center"
               )}
             >
-              {media.cover_url ? (
-                <img
-                  src={media.cover_url}
-                  alt={media.title}
-                  className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-105"
-                  loading="lazy"
-                  referrerPolicy="no-referrer"
-                  crossOrigin="anonymous"
-                  onError={(e) => {
-                    e.currentTarget.style.display = "none";
-                    e.currentTarget.nextElementSibling?.classList.remove("hidden");
-                  }}
-                />
-              ) : null}
               <div
                 className={cn(
-                  "absolute inset-0 flex items-center justify-center",
-                  media.cover_url && "hidden"
+                  "relative shrink-0 overflow-hidden rounded-md bg-muted",
+                  media.media_type === "record" ? "h-20 w-20" : "h-24 w-16"
                 )}
               >
-                <Icon className="h-6 w-6 text-muted-foreground/30" />
+                {media.cover_url ? (
+                  <img
+                    src={media.cover_url}
+                    alt={media.title}
+                    className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-105"
+                    loading="lazy"
+                    referrerPolicy="no-referrer"
+                    crossOrigin="anonymous"
+                    onError={(e) => {
+                      e.currentTarget.style.display = "none";
+                      e.currentTarget.nextElementSibling?.classList.remove("hidden");
+                    }}
+                  />
+                ) : null}
+                <div
+                  className={cn(
+                    "absolute inset-0 flex items-center justify-center",
+                    media.cover_url && "hidden"
+                  )}
+                >
+                  <Icon className="h-6 w-6 text-muted-foreground/30" />
+                </div>
+              </div>
+
+              <div className="flex min-w-0 flex-1 flex-col justify-center">
+                <h3 className="text-sm font-semibold leading-tight line-clamp-2 group-hover:text-primary transition-colors">
+                  {media.title}
+                </h3>
+                {subtitle && (
+                  <p className="mt-0.5 text-xs text-muted-foreground truncate">
+                    {subtitle}
+                  </p>
+                )}
+                <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
+                  {media.year && <span>{media.year}</span>}
+                  {media.genres.length > 0 && (
+                    <span className="truncate">
+                      {media.genres.slice(0, 2).join(", ")}
+                    </span>
+                  )}
+                </div>
+                {entry.rating != null && (
+                  <div className="mt-1.5">
+                    <RatingStars rating={entry.rating} size="sm" />
+                  </div>
+                )}
               </div>
             </div>
 
-            <div className="flex min-w-0 flex-1 flex-col justify-center">
-              <h3 className="text-sm font-semibold leading-tight line-clamp-2 group-hover:text-primary transition-colors">
-                {media.title}
-              </h3>
-              {subtitle && (
-                <p className="mt-0.5 text-xs text-muted-foreground truncate">
-                  {subtitle}
+            {hasReview && (
+              <div
+                className="min-w-0 border-t border-border/50 pt-3 sm:w-[min(100%,20rem)] sm:shrink-0 sm:border-t-0 sm:border-l sm:pt-0 sm:pl-4"
+                title={reviewText}
+              >
+                <p className="text-xs leading-relaxed text-muted-foreground line-clamp-5 whitespace-pre-wrap sm:line-clamp-12 sm:max-h-44 sm:overflow-y-auto">
+                  {reviewText}
                 </p>
-              )}
-              <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
-                {media.year && <span>{media.year}</span>}
-                {media.genres.length > 0 && (
-                  <span className="truncate">
-                    {media.genres.slice(0, 2).join(", ")}
-                  </span>
-                )}
               </div>
-              {entry.rating != null && (
-                <div className="mt-1.5">
-                  <RatingStars rating={entry.rating} size="sm" />
-                </div>
-              )}
-            </div>
+            )}
           </div>
         </Card>
       </Link>

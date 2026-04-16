@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import type { Entry, EntryStatus, Media, OwnershipStatus, Profile, SearchResult } from "@/types";
+import { shouldBumpFeedEvent } from "@/lib/feedBump";
 import { useAuth } from "./useAuth";
 
 export async function upsertMedia(result: SearchResult): Promise<string> {
@@ -53,6 +54,26 @@ export function useCreateEntry() {
 
       const mediaId = await upsertMedia(params.searchResult);
 
+      const { data: existing } = await supabase
+        .from("entries")
+        .select("*")
+        .eq("media_id", mediaId)
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      let feed_bumped_at: string;
+      if (existing) {
+        const bump = shouldBumpFeedEvent(
+          { status: existing.status, ownership: existing.ownership },
+          { status: params.status, ownership: params.ownership }
+        );
+        feed_bumped_at = bump
+          ? new Date().toISOString()
+          : (existing.feed_bumped_at ?? existing.created_at);
+      } else {
+        feed_bumped_at = new Date().toISOString();
+      }
+
       const { data, error } = await supabase
         .from("entries")
         .upsert(
@@ -64,6 +85,7 @@ export function useCreateEntry() {
             rating: params.rating ?? null,
             review: params.review ?? null,
             consumed_date: params.consumed_date ?? null,
+            feed_bumped_at,
           },
           { onConflict: "media_id,user_id" }
         )
@@ -88,9 +110,29 @@ export function useUpdateEntry() {
       id,
       ...updates
     }: Partial<Entry> & { id: string }) => {
+      const { data: prev, error: fetchError } = await supabase
+        .from("entries")
+        .select("*")
+        .eq("id", id)
+        .single();
+
+      if (fetchError) throw fetchError;
+      if (!prev) throw new Error("Entry not found");
+
+      const next = { ...prev, ...updates } as Entry;
+      const bump = shouldBumpFeedEvent(
+        { status: prev.status, ownership: prev.ownership },
+        { status: next.status, ownership: next.ownership }
+      );
+
+      const payload: Record<string, unknown> = { ...updates };
+      if (bump) {
+        payload.feed_bumped_at = new Date().toISOString();
+      }
+
       const { data, error } = await supabase
         .from("entries")
-        .update(updates)
+        .update(payload)
         .eq("id", id)
         .select()
         .single();
@@ -133,7 +175,7 @@ export function useFeed(mediaTypeFilter?: string) {
       let query = supabase
         .from("entries")
         .select(selectStr)
-        .order("updated_at", { ascending: false })
+        .order("feed_bumped_at", { ascending: false })
         .limit(50);
 
       if (useInner) {

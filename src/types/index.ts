@@ -34,6 +34,8 @@ export interface Entry {
   consumed_date: string | null;
   created_at: string;
   updated_at: string;
+  /** Drives home feed ordering; bumped only on meaningful status/ownership changes */
+  feed_bumped_at?: string;
 }
 
 export interface EntryWithMedia extends Entry {

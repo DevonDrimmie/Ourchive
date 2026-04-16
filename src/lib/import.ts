@@ -350,7 +350,7 @@ export async function importLetterboxdCsv(options: {
 
       const { data: existing } = await supabase
         .from("entries")
-        .select("id")
+        .select("id, feed_bumped_at")
         .eq("media_id", mediaId)
         .eq("user_id", userId)
         .maybeSingle();
@@ -364,6 +364,9 @@ export async function importLetterboxdCsv(options: {
           rating,
           review,
           consumed_date: consumedDate,
+          ...(existing?.feed_bumped_at != null
+            ? { feed_bumped_at: existing.feed_bumped_at }
+            : {}),
         },
         { onConflict: "media_id,user_id" }
       );
