@@ -3,7 +3,7 @@ import { supabase } from "@/lib/supabase";
 import { searchMovies, searchTv } from "@/lib/api/tmdb";
 import { searchBooks } from "@/lib/api/openlib";
 import { searchRecords } from "@/lib/api/musicbrainz";
-import type { SearchResult, EntryStatus } from "@/types";
+import type { MediaType, SearchResult, EntryStatus } from "@/types";
 import { useDebounce } from "./useDebounce";
 
 export interface OmniResult extends SearchResult {
@@ -103,6 +103,30 @@ export function useOmniSearch(query: string) {
       });
     },
     enabled: debouncedQuery.length >= 2,
+    staleTime: 1000 * 60 * 5,
+    placeholderData: (prev) => prev,
+  });
+}
+
+/** Search a single media type (e.g. when relinking an entry to a different title). */
+export function useMediaTypeSearch(mediaType: MediaType, query: string) {
+  const debouncedQuery = useDebounce(query, 400);
+
+  return useQuery({
+    queryKey: ["media-type-search", mediaType, debouncedQuery],
+    queryFn: async (): Promise<SearchResult[]> => {
+      switch (mediaType) {
+        case "movie":
+          return (await searchMovies(debouncedQuery)).slice(0, 12);
+        case "tv":
+          return (await searchTv(debouncedQuery)).slice(0, 12);
+        case "book":
+          return (await searchBooks(debouncedQuery)).slice(0, 12);
+        case "record":
+          return (await searchRecords(debouncedQuery)).slice(0, 12);
+      }
+    },
+    enabled: debouncedQuery.trim().length >= 2,
     staleTime: 1000 * 60 * 5,
     placeholderData: (prev) => prev,
   });

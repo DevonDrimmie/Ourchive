@@ -120,10 +120,33 @@ export function useUpdateEntry() {
       if (!prev) throw new Error("Entry not found");
 
       const next = { ...prev, ...updates } as Entry;
-      const bump = shouldBumpFeedEvent(
+      const bumpStatus = shouldBumpFeedEvent(
         { status: prev.status, ownership: prev.ownership },
         { status: next.status, ownership: next.ownership }
       );
+
+      const mediaChanged =
+        typeof updates.media_id === "string" &&
+        updates.media_id !== prev.media_id;
+
+      if (mediaChanged) {
+        const { data: conflict, error: conflictErr } = await supabase
+          .from("entries")
+          .select("id")
+          .eq("media_id", updates.media_id)
+          .eq("user_id", prev.user_id)
+          .neq("id", id)
+          .maybeSingle();
+
+        if (conflictErr) throw conflictErr;
+        if (conflict) {
+          throw new Error(
+            "You already have an entry for that title. Remove or edit the other entry first."
+          );
+        }
+      }
+
+      const bump = bumpStatus || mediaChanged;
 
       const payload: Record<string, unknown> = { ...updates };
       if (bump) {
@@ -143,6 +166,8 @@ export function useUpdateEntry() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["entries"] });
       queryClient.invalidateQueries({ queryKey: ["feed"] });
+      queryClient.invalidateQueries({ queryKey: ["media"] });
+      queryClient.invalidateQueries({ queryKey: ["entries", "media"] });
     },
   });
 }

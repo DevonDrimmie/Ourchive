@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { PageShell } from "@/components/layout/PageShell";
 import { CoverImage } from "@/components/media/CoverImage";
 import { RatingStars } from "@/components/media/RatingStars";
@@ -18,6 +18,7 @@ import { format } from "date-fns";
 
 export function MediaDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { data: media, isLoading: mediaLoading } = useMediaDetail(id!);
   const { data: entries, isLoading: entriesLoading } = useMediaEntries(id!);
@@ -192,10 +193,15 @@ export function MediaDetailPage() {
 
       <EditEntryDialog
         entry={editingEntry}
+        media={media}
         mediaType={media.media_type as MediaType}
         open={editingEntry !== null}
         onOpenChange={(open) => {
           if (!open) setEditingEntry(null);
+        }}
+        onMediaChanged={(newMediaId) => {
+          setEditingEntry(null);
+          navigate(`/media/${newMediaId}`, { replace: true });
         }}
       />
     </PageShell>
