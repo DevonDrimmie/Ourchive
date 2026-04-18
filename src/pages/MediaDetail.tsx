@@ -130,18 +130,27 @@ export function MediaDetailPage() {
                 <Card key={entry.id} className="border-border/50">
                   <CardContent className="pt-4">
                     <div className="flex items-center gap-3 mb-3">
-                      <Avatar className="h-9 w-9">
-                        {entry.profiles?.avatar_url && (
-                          <AvatarImage src={entry.profiles.avatar_url} alt={entry.profiles.display_name} />
-                        )}
-                        <AvatarFallback className="text-xs bg-primary/20 text-primary">
-                          {initials}
-                        </AvatarFallback>
-                      </Avatar>
+                      <Link
+                        to={`/profile/${entry.user_id}`}
+                        className="shrink-0 hover:opacity-80 transition-opacity"
+                        aria-label={entry.profiles?.display_name}
+                      >
+                        <Avatar className="h-9 w-9">
+                          {entry.profiles?.avatar_url && (
+                            <AvatarImage src={entry.profiles.avatar_url} alt={entry.profiles.display_name} />
+                          )}
+                          <AvatarFallback className="text-xs bg-primary/20 text-primary">
+                            {initials}
+                          </AvatarFallback>
+                        </Avatar>
+                      </Link>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium">
+                        <Link
+                          to={`/profile/${entry.user_id}`}
+                          className="text-sm font-medium hover:underline underline-offset-2"
+                        >
                           {entry.profiles?.display_name}
-                        </p>
+                        </Link>
                         <p className="text-xs text-muted-foreground">
                           {MEDIA_TYPE_VERB[media.media_type as MediaType]?.[entry.status as EntryStatus]}
                         </p>
