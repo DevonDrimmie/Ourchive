@@ -61,6 +61,50 @@ export function useSetTopFour() {
   });
 }
 
+/**
+ * Replace the entire (user, media_type) top-four ordering with the given
+ * ordered list of media IDs. Positions are assigned 1..n based on list order.
+ * Items are deleted then re-inserted to avoid clashing the unique
+ * (user_id, media_type, slot) constraint.
+ */
+export function useReorderTopFours() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      userId,
+      mediaType,
+      orderedMediaIds,
+    }: {
+      userId: string;
+      mediaType: MediaType;
+      orderedMediaIds: string[];
+    }) => {
+      const { error: delError } = await supabase
+        .from("top_fours")
+        .delete()
+        .eq("user_id", userId)
+        .eq("media_type", mediaType);
+      if (delError) throw delError;
+
+      if (orderedMediaIds.length === 0) return;
+
+      const rows = orderedMediaIds.slice(0, 4).map((media_id, idx) => ({
+        user_id: userId,
+        media_type: mediaType,
+        slot: idx + 1,
+        media_id,
+      }));
+
+      const { error: insError } = await supabase.from("top_fours").insert(rows);
+      if (insError) throw insError;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["top_fours"] });
+    },
+  });
+}
+
 export function useRemoveTopFour() {
   const queryClient = useQueryClient();
 

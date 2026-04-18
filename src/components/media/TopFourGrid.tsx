@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Film, Tv, BookOpen, Disc3, Plus, X, Loader2 } from "lucide-react";
 import {
   Dialog,
@@ -9,13 +9,34 @@ import {
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { supabase } from "@/lib/supabase";
-import { useSetTopFour, useRemoveTopFour } from "@/lib/hooks/useTopFours";
+import {
+  useSetTopFour,
+  useRemoveTopFour,
+  useReorderTopFours,
+} from "@/lib/hooks/useTopFours";
 import type { TopFourEntry } from "@/lib/hooks/useTopFours";
 import type { MediaType, SearchResult } from "@/types";
 import { MEDIA_TYPE_LABELS } from "@/types";
 import { cn } from "@/lib/utils";
 import { useSearch } from "@/lib/hooks/useSearch";
 import { Link } from "react-router-dom";
+import {
+  DndContext,
+  PointerSensor,
+  KeyboardSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  arrayMove,
+  rectSortingStrategy,
+  sortableKeyboardCoordinates,
+  useSortable,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 interface TopFourGridProps {
   mediaType: MediaType;
@@ -62,6 +83,114 @@ async function upsertMedia(result: SearchResult): Promise<string> {
   return data.id;
 }
 
+function SortableTile({
+  entry,
+  mediaType,
+  editable,
+  onRemove,
+  Icon,
+}: {
+  entry: TopFourEntry;
+  mediaType: MediaType;
+  editable: boolean;
+  onRemove: () => void;
+  Icon: typeof Film;
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: entry.media_id, disabled: !editable });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    zIndex: isDragging ? 20 : undefined,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={cn(
+        "relative group touch-none",
+        isDragging && "opacity-90"
+      )}
+      {...(editable ? attributes : {})}
+      {...(editable ? listeners : {})}
+    >
+      <Link
+        to={`/media/${entry.media.id}`}
+        onClick={(e) => {
+          if (isDragging) {
+            e.preventDefault();
+            e.stopPropagation();
+          }
+        }}
+        draggable={false}
+        className={cn(
+          "block overflow-hidden rounded-lg bg-muted ring-2 ring-transparent transition-shadow",
+          mediaType === "record" ? "aspect-square" : "aspect-[2/3]",
+          isDragging && "ring-primary/60 shadow-lg",
+          editable && "cursor-grab active:cursor-grabbing"
+        )}
+      >
+        {entry.media.cover_url ? (
+          <img
+            src={entry.media.cover_url}
+            alt={entry.media.title}
+            className="h-full w-full object-cover"
+            loading="lazy"
+            referrerPolicy="no-referrer"
+            crossOrigin="anonymous"
+            draggable={false}
+            onError={(e) => {
+              e.currentTarget.style.display = "none";
+              e.currentTarget.nextElementSibling?.classList.remove("hidden");
+            }}
+          />
+        ) : null}
+        <div
+          className={cn(
+            "flex h-full w-full items-center justify-center",
+            entry.media.cover_url && "hidden"
+          )}
+        >
+          <Icon className="h-8 w-8 text-muted-foreground/30" />
+        </div>
+      </Link>
+
+      {editable && (
+        <button
+          type="button"
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onRemove();
+          }}
+          aria-label={`Remove ${entry.media.title}`}
+          className={cn(
+            "absolute -top-2 -right-2 z-10 flex h-6 w-6 items-center justify-center rounded-full",
+            "bg-destructive text-destructive-foreground shadow-md ring-2 ring-background",
+            "opacity-0 group-hover:opacity-100 focus-visible:opacity-100",
+            "hover:scale-110 transition-all"
+          )}
+        >
+          <X className="h-3.5 w-3.5" />
+        </button>
+      )}
+
+      <p className="mt-1 text-[10px] text-muted-foreground leading-tight line-clamp-2 text-center">
+        {entry.media.title}
+      </p>
+    </div>
+  );
+}
+
 export function TopFourGrid({
   mediaType,
   entries,
@@ -71,6 +200,7 @@ export function TopFourGrid({
   const Icon = typeIcons[mediaType];
   const setTopFour = useSetTopFour();
   const removeTopFour = useRemoveTopFour();
+  const reorderTopFours = useReorderTopFours();
 
   const [pickSlot, setPickSlot] = useState<number | null>(null);
   const [search, setSearch] = useState("");
@@ -80,10 +210,45 @@ export function TopFourGrid({
     mediaType
   );
 
-  const slots = [1, 2, 3, 4].map((slot) => {
-    const entry = entries.find((e) => e.slot === slot);
-    return { slot, entry };
-  });
+  /**
+   * Local working order of entries (sorted by slot when synced from server).
+   * Drag-and-drop mutates this immediately for responsive UX, then we persist.
+   */
+  const sortedFromProps = [...entries].sort((a, b) => a.slot - b.slot);
+  const [orderedEntries, setOrderedEntries] = useState<TopFourEntry[]>(sortedFromProps);
+
+  const propsKey = sortedFromProps.map((e) => `${e.slot}:${e.media_id}`).join("|");
+  useEffect(() => {
+    setOrderedEntries(sortedFromProps);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [propsKey]);
+
+  const filledCount = orderedEntries.length;
+  const emptySlots = Math.max(0, 4 - filledCount);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const oldIdx = orderedEntries.findIndex((e) => e.media_id === active.id);
+    const newIdx = orderedEntries.findIndex((e) => e.media_id === over.id);
+    if (oldIdx === -1 || newIdx === -1) return;
+
+    const next = arrayMove(orderedEntries, oldIdx, newIdx);
+    setOrderedEntries(next);
+    reorderTopFours.mutate({
+      userId,
+      mediaType,
+      orderedMediaIds: next.map((e) => e.media_id),
+    });
+  };
 
   const handlePick = async (result: SearchResult) => {
     if (pickSlot === null) return;
@@ -108,92 +273,84 @@ export function TopFourGrid({
     }
   };
 
-  const handleRemove = async (slot: number) => {
-    await removeTopFour.mutateAsync({ userId, mediaType, slot });
+  const handleRemove = (entryToRemove: TopFourEntry) => {
+    const next = orderedEntries.filter(
+      (e) => e.media_id !== entryToRemove.media_id
+    );
+    setOrderedEntries(next);
+
+    if (next.length === orderedEntries.length - 1) {
+      reorderTopFours.mutate({
+        userId,
+        mediaType,
+        orderedMediaIds: next.map((e) => e.media_id),
+      });
+    } else {
+      removeTopFour.mutate({
+        userId,
+        mediaType,
+        slot: entryToRemove.slot,
+      });
+    }
   };
+
+  /** Slot number that an "add" tile fills. Compacted into the next free slot. */
+  const nextEmptySlot = (offset: number) => filledCount + offset + 1;
 
   return (
     <div>
       <h3 className="text-sm font-semibold text-muted-foreground mb-2">
         Top {MEDIA_TYPE_LABELS[mediaType]}s
       </h3>
-      <div className="grid grid-cols-4 gap-2">
-        {slots.map(({ slot, entry }) => (
-          <div key={slot} className="relative group">
-            {entry ? (
-              <Link to={`/media/${entry.media.id}`}>
-                <div
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragEnd={handleDragEnd}
+      >
+        <SortableContext
+          items={orderedEntries.map((e) => e.media_id)}
+          strategy={rectSortingStrategy}
+        >
+          <div className="grid grid-cols-4 gap-2">
+            {orderedEntries.map((entry) => (
+              <SortableTile
+                key={entry.media_id}
+                entry={entry}
+                mediaType={mediaType}
+                editable={editable}
+                onRemove={() => handleRemove(entry)}
+                Icon={Icon}
+              />
+            ))}
+
+            {Array.from({ length: emptySlots }).map((_, idx) => (
+              <div key={`empty-${idx}`} className="relative">
+                <button
+                  type="button"
+                  onClick={() =>
+                    editable && setPickSlot(nextEmptySlot(idx))
+                  }
+                  disabled={!editable}
                   className={cn(
-                    "overflow-hidden rounded-lg bg-muted",
+                    "w-full overflow-hidden rounded-lg bg-muted/50 border border-dashed border-border",
                     mediaType === "record"
                       ? "aspect-square"
-                      : "aspect-[2/3]"
+                      : "aspect-[2/3]",
+                    editable &&
+                      "hover:border-primary/50 hover:bg-muted cursor-pointer transition-colors"
                   )}
                 >
-                  {entry.media.cover_url ? (
-                    <img
-                      src={entry.media.cover_url}
-                      alt={entry.media.title}
-                      className="h-full w-full object-cover"
-                      loading="lazy"
-                      referrerPolicy="no-referrer"
-                      crossOrigin="anonymous"
-                      onError={(e) => {
-                        e.currentTarget.style.display = "none";
-                        e.currentTarget.nextElementSibling?.classList.remove(
-                          "hidden"
-                        );
-                      }}
-                    />
-                  ) : null}
-                  <div
-                    className={cn(
-                      "absolute inset-0 flex items-center justify-center",
-                      entry.media.cover_url && "hidden"
-                    )}
-                  >
-                    <Icon className="h-8 w-8 text-muted-foreground/30" />
-                  </div>
-                </div>
-              </Link>
-            ) : (
-              <button
-                onClick={() => editable && setPickSlot(slot)}
-                disabled={!editable}
-                className={cn(
-                  "w-full overflow-hidden rounded-lg bg-muted/50 border border-dashed border-border",
-                  mediaType === "record"
-                    ? "aspect-square"
-                    : "aspect-[2/3]",
-                  editable &&
-                    "hover:border-primary/50 hover:bg-muted cursor-pointer transition-colors"
-                )}
-              >
-                {editable && (
-                  <div className="flex h-full items-center justify-center">
-                    <Plus className="h-5 w-5 text-muted-foreground/40" />
-                  </div>
-                )}
-              </button>
-            )}
-
-            {editable && entry && (
-              <button
-                onClick={() => handleRemove(slot)}
-                className="absolute -top-1.5 -right-1.5 hidden group-hover:flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-destructive-foreground shadow-sm"
-              >
-                <X className="h-3 w-3" />
-              </button>
-            )}
-
-            {entry && (
-              <p className="mt-1 text-[10px] text-muted-foreground leading-tight line-clamp-2 text-center">
-                {entry.media.title}
-              </p>
-            )}
+                  {editable && (
+                    <div className="flex h-full items-center justify-center">
+                      <Plus className="h-5 w-5 text-muted-foreground/40" />
+                    </div>
+                  )}
+                </button>
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
+        </SortableContext>
+      </DndContext>
 
       <Dialog
         open={pickSlot !== null}

@@ -1,14 +1,12 @@
+import { useMemo } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { RatingStars } from "@/components/media/RatingStars";
 import { PageShell } from "@/components/layout/PageShell";
+import { BlendedMediaCard } from "@/components/media/BlendedMediaCard";
 import { useFeed } from "@/lib/hooks/useEntries";
 import type { Media, Entry, Profile, MediaType } from "@/types";
-import { Loader2, Film, Tv, BookOpen, Disc3 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
 
 const filters = [
@@ -25,13 +23,6 @@ const pathToFilter: Record<string, string> = {
   "/tv": "tv",
   "/books": "book",
   "/records": "record",
-};
-
-const typeIcons: Record<MediaType, typeof Film> = {
-  movie: Film,
-  tv: Tv,
-  book: BookOpen,
-  record: Disc3,
 };
 
 const typeLabels: Record<MediaType, string> = {
@@ -92,145 +83,56 @@ interface FeedEntry extends Entry {
   profiles: Profile;
 }
 
-function FeedCard({ entry }: { entry: FeedEntry }) {
-  const { media, profiles: profile } = entry;
-  const Icon = typeIcons[media.media_type];
-  const initials = profile.display_name
-    ?.split(" ")
-    .map((n) => n[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
+function feedTimeOf(entry: FeedEntry): number {
+  return new Date(entry.feed_bumped_at ?? entry.updated_at).getTime();
+}
 
-  const subtitle =
-    media.media_type === "record"
-      ? (media.metadata as { artist?: string })?.artist
-      : media.media_type === "book"
-        ? (media.metadata as { authors?: string[] })?.authors?.join(", ")
-        : (media.metadata as { director?: string })?.director;
+function describeGroup(items: FeedEntry[]): string {
+  const sorted = [...items].sort((a, b) => feedTimeOf(b) - feedTimeOf(a));
+  const latest = sorted[0]!;
+  const media = latest.media;
 
-  const feedTime = entry.feed_bumped_at ?? entry.updated_at;
-  const timeAgo = formatDistanceToNow(new Date(feedTime), {
+  if (sorted.length === 1) {
+    return getActionText(latest, media, latest.profiles);
+  }
+
+  const uniqueProfiles = [
+    ...new Map(sorted.map((e) => [e.profiles.id, e.profiles])).values(),
+  ];
+  const names = uniqueProfiles.map((p) => p.display_name);
+  const formatted =
+    names.length === 2
+      ? `${names[0]} and ${names[1]}`
+      : `${names.slice(0, -1).join(", ")}, and ${names[names.length - 1]}`;
+
+  const thing = typeLabels[media.media_type];
+  return `${formatted} have entries for this ${thing}`;
+}
+
+function FeedGroup({ items }: { items: FeedEntry[] }) {
+  const sorted = [...items].sort((a, b) => feedTimeOf(b) - feedTimeOf(a));
+  const latest = sorted[0]!;
+  const media = latest.media;
+
+  const timeAgo = formatDistanceToNow(new Date(feedTimeOf(latest)), {
     addSuffix: true,
   });
-
-  const reviewText = entry.review?.trim() ?? "";
-  const hasReview = reviewText.length > 0;
+  const headline = describeGroup(sorted);
 
   return (
     <div className="w-full min-w-0">
-      <div className="flex min-w-0 items-center gap-2 mb-2">
-        <Link to={`/profile/${profile.id}`} className="shrink-0">
-          <Avatar className="h-5 w-5 hover:opacity-80 transition-opacity">
-            {profile.avatar_url && (
-              <AvatarImage src={profile.avatar_url} alt={profile.display_name} />
-            )}
-            <AvatarFallback className="text-[9px] bg-primary/20 text-primary">
-              {initials}
-            </AvatarFallback>
-          </Avatar>
-        </Link>
-        <p className="text-sm text-foreground flex-1 truncate">
-          <Link
-            to={`/profile/${profile.id}`}
-            className="font-medium hover:underline underline-offset-2"
-          >
-            {profile.display_name}
-          </Link>
-          {" "}
-          {getActionText(entry, media, profile).replace(profile.display_name, "").trimStart()}
+      <div className="mb-2 flex min-w-0 items-center gap-2">
+        <p className="min-w-0 flex-1 truncate text-sm text-foreground">
+          {headline}
         </p>
-        <span className="text-xs text-muted-foreground shrink-0">
-          {timeAgo}
-        </span>
+        <span className="shrink-0 text-xs text-muted-foreground">{timeAgo}</span>
       </div>
 
-      <Link
-        to={`/media/${media.id}`}
-        className="block w-full min-w-0"
-      >
-        <Card className="group min-w-0 gap-0 py-0 overflow-hidden border-border/50 bg-card hover:border-primary/30 transition-all duration-200">
-          <div
-            className={cn(
-              "min-w-0 p-3",
-              hasReview &&
-                "flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-4"
-            )}
-          >
-            <div
-              className={cn(
-                "flex min-w-0 gap-3 items-start",
-                hasReview && "sm:max-w-[min(100%,28rem)] sm:shrink-0"
-              )}
-            >
-              <div
-                className={cn(
-                  "relative shrink-0 overflow-hidden rounded-md bg-muted",
-                  media.media_type === "record" ? "h-20 w-20" : "h-24 w-16"
-                )}
-              >
-                {media.cover_url ? (
-                  <img
-                    src={media.cover_url}
-                    alt={media.title}
-                    className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-105"
-                    loading="lazy"
-                    referrerPolicy="no-referrer"
-                    crossOrigin="anonymous"
-                    onError={(e) => {
-                      e.currentTarget.style.display = "none";
-                      e.currentTarget.nextElementSibling?.classList.remove("hidden");
-                    }}
-                  />
-                ) : null}
-                <div
-                  className={cn(
-                    "absolute inset-0 flex items-center justify-center",
-                    media.cover_url && "hidden"
-                  )}
-                >
-                  <Icon className="h-6 w-6 text-muted-foreground/30" />
-                </div>
-              </div>
-
-              <div className="flex min-w-0 flex-1 flex-col justify-start">
-                <h3 className="text-sm font-semibold leading-tight line-clamp-2 group-hover:text-primary transition-colors">
-                  {media.title}
-                </h3>
-                {subtitle && (
-                  <p className="mt-0.5 text-xs text-muted-foreground truncate">
-                    {subtitle}
-                  </p>
-                )}
-                <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
-                  {media.year && <span>{media.year}</span>}
-                  {media.genres.length > 0 && (
-                    <span className="truncate">
-                      {media.genres.slice(0, 2).join(", ")}
-                    </span>
-                  )}
-                </div>
-                {entry.rating != null && (
-                  <div className="mt-1.5">
-                    <RatingStars rating={entry.rating} size="sm" />
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {hasReview && (
-              <div
-                className="min-w-0 flex-1 border-t border-border/50 pt-3 sm:border-t-0 sm:border-l sm:border-border/50 sm:pt-0 sm:pl-4"
-                title={reviewText}
-              >
-                <p className="min-w-0 wrap-break-word text-xs leading-relaxed text-foreground line-clamp-5 whitespace-pre-wrap sm:line-clamp-12 sm:max-h-44 sm:overflow-y-auto">
-                  {reviewText}
-                </p>
-              </div>
-            )}
-          </div>
-        </Card>
-      </Link>
+      <BlendedMediaCard
+        media={media}
+        items={sorted.map((e) => ({ entry: e, profile: e.profiles }))}
+        showReviews
+      />
     </div>
   );
 }
@@ -246,6 +148,26 @@ export function HomePage() {
     const tab = filters.find((f) => f.value === value);
     if (tab) navigate(tab.path);
   };
+
+  /**
+   * Dedupe by media: when the same media appears multiple times in the feed
+   * (e.g. logged by both household members), collapse them into one card
+   * placed at the position of whichever entry was most recently bumped.
+   */
+  const groupedFeed = useMemo(() => {
+    if (!entries?.length) return [] as FeedEntry[][];
+    const groups = new Map<string, FeedEntry[]>();
+    for (const e of entries as FeedEntry[]) {
+      const mid = e.media.id;
+      if (!groups.has(mid)) groups.set(mid, []);
+      groups.get(mid)!.push(e);
+    }
+    return Array.from(groups.values()).sort((a, b) => {
+      const ta = Math.max(...a.map(feedTimeOf));
+      const tb = Math.max(...b.map(feedTimeOf));
+      return tb - ta;
+    });
+  }, [entries]);
 
   return (
     <PageShell>
@@ -271,11 +193,11 @@ export function HomePage() {
         <div className="flex items-center justify-center py-20">
           <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
         </div>
-      ) : entries && entries.length > 0 ? (
+      ) : groupedFeed.length > 0 ? (
         <div className="mt-4 flex flex-col divide-y divide-border/50">
-          {entries.map((entry: FeedEntry) => (
-            <div key={entry.id} className="py-4 first:pt-0">
-              <FeedCard entry={entry} />
+          {groupedFeed.map((group) => (
+            <div key={group[0]!.media.id} className="py-4 first:pt-0">
+              <FeedGroup items={group} />
             </div>
           ))}
         </div>

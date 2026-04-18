@@ -292,6 +292,29 @@ export function useMediaEntries(mediaId: string) {
   });
 }
 
+/**
+ * Fetch every entry (any user) for a given list of media IDs.
+ * Used by the collection page so the blended card can show all users
+ * who have the media, even when the page is filtered to one user's list.
+ */
+export function useEntriesForMediaList(mediaIds: string[]) {
+  const sortedKey = [...mediaIds].sort().join(",");
+  return useQuery({
+    queryKey: ["entries", "media-list", sortedKey],
+    queryFn: async () => {
+      if (mediaIds.length === 0) return [];
+      const { data, error } = await supabase
+        .from("entries")
+        .select("*, profiles(*)")
+        .in("media_id", mediaIds);
+
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: mediaIds.length > 0,
+  });
+}
+
 export function useMediaDetail(mediaId: string) {
   return useQuery({
     queryKey: ["media", mediaId],
