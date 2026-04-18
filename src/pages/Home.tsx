@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Separator } from "@/components/ui/separator";
 import { PageShell } from "@/components/layout/PageShell";
 import { BlendedMediaCard } from "@/components/media/BlendedMediaCard";
 import { useFeed } from "@/lib/hooks/useEntries";
@@ -167,12 +168,14 @@ export function HomePage() {
         </Tabs>
       </div>
 
+      <Separator className="my-6" />
+
       {isLoading ? (
         <div className="flex items-center justify-center py-20">
           <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
         </div>
       ) : groupedFeed.length > 0 ? (
-        <div className="mt-4 flex flex-col divide-y divide-border/50">
+        <div className="flex flex-col divide-y divide-border/50">
           {groupedFeed.map((group) => (
             <div key={group[0]!.media.id} className="py-4 first:pt-0">
               <FeedGroup items={group} />

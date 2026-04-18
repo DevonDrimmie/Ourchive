@@ -8,6 +8,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
 import { BlendedMediaCard } from "@/components/media/BlendedMediaCard";
 import { PageShell } from "@/components/layout/PageShell";
 import {
@@ -250,8 +251,7 @@ export function CollectionPage() {
             <SelectContent>
               {profiles?.map((p) => (
                 <SelectItem key={p.id} value={p.id}>
-                  {p.display_name}
-                  {p.id === user?.id ? " (you)" : ""}
+                  {p.id === user?.id ? "My Collection" : p.display_name}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -259,12 +259,14 @@ export function CollectionPage() {
         </div>
       </div>
 
+      <Separator className="my-6" />
+
       {isLoading ? (
         <div className="flex items-center justify-center py-20">
           <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
         </div>
       ) : groupedByMedia.length > 0 ? (
-        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-3 sm:grid-cols-2">
           {groupedByMedia.map((group) => {
             const media = group[0]!.media;
             return (
