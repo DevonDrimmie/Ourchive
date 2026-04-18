@@ -11,6 +11,7 @@ import {
   CollectionReviewsList,
   CollectionWantList,
 } from "@/components/media/CollectionTabLists";
+import { RankingTab } from "@/components/media/RankingTab";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ProfileMediaTypeNav } from "@/components/profile/ProfileMediaTypeNav";
 import { useTopFours } from "@/lib/hooks/useTopFours";
@@ -156,6 +157,7 @@ export function MediaDashboardPage() {
           <TabsTrigger value="stats">Stats</TabsTrigger>
           <TabsTrigger value="reviews">Reviews</TabsTrigger>
           <TabsTrigger value="wanted">Wanted</TabsTrigger>
+          <TabsTrigger value="ranking">Ranking</TabsTrigger>
         </TabsList>
 
         <TabsContent value="stats" className="mt-4">
@@ -168,6 +170,15 @@ export function MediaDashboardPage() {
 
         <TabsContent value="wanted" className="mt-4">
           <CollectionWantList entries={entries} />
+        </TabsContent>
+
+        <TabsContent value="ranking" className="mt-4">
+          <RankingTab
+            entries={entries}
+            userId={id!}
+            mediaType={mediaType}
+            editable={isOwner}
+          />
         </TabsContent>
       </Tabs>
     </PageShell>

@@ -232,14 +232,14 @@ export function BlendedMediaCard({
     );
 
   return (
-    <Link to={`/media/${media.id}`}>
+    <Link to={`/media/${media.id}`} className="block h-full">
       <Card
         className={cn(
-          "group overflow-hidden border-border/50 bg-card py-0 gap-0 hover:border-primary/30 transition-all duration-200",
+          "group h-full overflow-hidden border-border/50 bg-card py-0 gap-0 hover:border-primary/30 transition-all duration-200",
           className
         )}
       >
-        <div className="flex items-stretch gap-3 p-3">
+        <div className="flex flex-1 items-stretch gap-3 p-3">
           <div
             className={cn(
               "relative shrink-0 overflow-hidden rounded-md bg-muted self-start",

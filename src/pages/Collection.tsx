@@ -122,60 +122,80 @@ export function CollectionPage() {
         </TabsList>
       </Tabs>
 
-      <div className="mt-3 flex flex-wrap gap-2">
-        <Select value={status} onValueChange={setStatus}>
-          <SelectTrigger className="w-32 h-8 text-xs">
-            <SelectValue placeholder="Status" />
-          </SelectTrigger>
-          <SelectContent>
-            {statusFilters.map((f) => (
-              <SelectItem key={f.value} value={f.value}>
-                {f.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+      <div className="mt-3 flex flex-wrap gap-3">
+        <div className="flex flex-col gap-1">
+          <label className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+            Status
+          </label>
+          <Select value={status} onValueChange={setStatus}>
+            <SelectTrigger className="w-32 h-8 text-xs">
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent>
+              {statusFilters.map((f) => (
+                <SelectItem key={f.value} value={f.value}>
+                  {f.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
-        <Select value={ownershipFilter} onValueChange={setOwnershipFilter}>
-          <SelectTrigger className="w-32 h-8 text-xs">
-            <SelectValue placeholder="Ownership" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Any</SelectItem>
-            <SelectItem value="owned">Owned</SelectItem>
-            <SelectItem value="physical">Physical</SelectItem>
-            <SelectItem value="digital">Digital</SelectItem>
-            <SelectItem value="want_to_own">Want to Own</SelectItem>
-            <SelectItem value="none">Not Owned</SelectItem>
-          </SelectContent>
-        </Select>
+        <div className="flex flex-col gap-1">
+          <label className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+            Ownership
+          </label>
+          <Select value={ownershipFilter} onValueChange={setOwnershipFilter}>
+            <SelectTrigger className="w-32 h-8 text-xs">
+              <SelectValue placeholder="Ownership" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Any</SelectItem>
+              <SelectItem value="owned">Owned</SelectItem>
+              <SelectItem value="physical">Physical</SelectItem>
+              <SelectItem value="digital">Digital</SelectItem>
+              <SelectItem value="want_to_own">Want to Own</SelectItem>
+              <SelectItem value="none">Not Owned</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
 
-        <Select value={userId} onValueChange={setUserId}>
-          <SelectTrigger className="w-32 h-8 text-xs">
-            <SelectValue placeholder="User" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Both</SelectItem>
-            {profiles?.map((p) => (
-              <SelectItem key={p.id} value={p.id}>
-                {p.display_name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="flex flex-col gap-1">
+          <label className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+            User
+          </label>
+          <Select value={userId} onValueChange={setUserId}>
+            <SelectTrigger className="w-32 h-8 text-xs">
+              <SelectValue placeholder="User" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Both</SelectItem>
+              {profiles?.map((p) => (
+                <SelectItem key={p.id} value={p.id}>
+                  {p.display_name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
-        <Select value={sortBy} onValueChange={setSortBy}>
-          <SelectTrigger className="w-28 h-8 text-xs">
-            <SelectValue placeholder="Sort" />
-          </SelectTrigger>
-          <SelectContent>
-            {sortOptions.map((s) => (
-              <SelectItem key={s.value} value={s.value}>
-                {s.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="flex flex-col gap-1">
+          <label className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+            Sort by
+          </label>
+          <Select value={sortBy} onValueChange={setSortBy}>
+            <SelectTrigger className="w-28 h-8 text-xs">
+              <SelectValue placeholder="Sort" />
+            </SelectTrigger>
+            <SelectContent>
+              {sortOptions.map((s) => (
+                <SelectItem key={s.value} value={s.value}>
+                  {s.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {isLoading ? (

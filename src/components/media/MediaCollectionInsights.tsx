@@ -13,6 +13,7 @@ import {
   AreaChart,
   Area,
   CartesianGrid,
+  Legend,
 } from "recharts";
 import { format, parseISO } from "date-fns";
 
@@ -295,52 +296,88 @@ function TopGenresAvgChart({ entries }: { entries: EntryWithMedia[] }) {
     return {
       name,
       count,
-      avg,
-      barValue: avg ?? 0,
+      avg: avg ?? 0,
+      hasAvg: avg != null,
     };
   });
 
-  const chartHeight = Math.max(260, data.length * 34);
+  const maxCount = Math.max(1, ...data.map((d) => d.count));
+  const chartHeight = Math.max(240, data.length * 28);
 
   return (
     <ResponsiveContainer width="100%" height="100%" minHeight={chartHeight}>
       <BarChart
         data={data}
-        layout="vertical"
-        margin={{ left: 4, right: 20, top: 4, bottom: 4 }}
+        margin={{ left: -8, right: -4, top: 4, bottom: 24 }}
+        barGap={2}
       >
+        <CartesianGrid
+          strokeDasharray="3 3"
+          stroke="#2a2a30"
+          vertical={false}
+        />
         <XAxis
-          type="number"
-          domain={[0, 5]}
-          tick={TICK_STYLE}
+          dataKey="name"
+          tick={TICK_STYLE_SM}
           axisLine={false}
           tickLine={false}
+          interval={0}
+          angle={-30}
+          textAnchor="end"
+          height={50}
         />
         <YAxis
-          type="category"
-          dataKey="name"
-          width={118}
-          tick={TICK_STYLE}
+          yAxisId="rating"
+          orientation="left"
+          domain={[0, 5]}
+          ticks={[0, 1, 2, 3, 4, 5]}
+          tick={TICK_STYLE_SM}
           axisLine={false}
           tickLine={false}
+          width={28}
+        />
+        <YAxis
+          yAxisId="count"
+          orientation="right"
+          domain={[0, Math.ceil(maxCount * 1.1)]}
+          allowDecimals={false}
+          tick={TICK_STYLE_SM}
+          axisLine={false}
+          tickLine={false}
+          width={28}
         />
         <Tooltip
           contentStyle={TOOLTIP_STYLE}
-          formatter={(
-            _value: unknown,
-            _label: unknown,
-            item: { payload?: { count: number; avg: number | null } }
-          ) => {
-            const p = item.payload;
-            if (!p) return ["", ""];
-            return [
-              `${p.count} title${p.count === 1 ? "" : "s"} · avg ${p.avg != null ? p.avg.toFixed(1) : "—"}`,
-              "",
-            ];
-          }}
           cursor={{ fill: "rgba(255,255,255,0.05)" }}
+          formatter={(value, name) => {
+            const num = typeof value === "number" ? value : Number(value);
+            const label = String(name ?? "");
+            if (label === "Avg rating") {
+              return [num > 0 ? num.toFixed(1) : "—", label];
+            }
+            return [String(value ?? ""), label];
+          }}
         />
-        <Bar dataKey="barValue" fill="#818cf8" radius={[0, 4, 4, 0]} />
+        <Legend
+          wrapperStyle={{ fontSize: 11, color: "#a1a1aa" }}
+          iconSize={10}
+          verticalAlign="top"
+          height={24}
+        />
+        <Bar
+          yAxisId="rating"
+          dataKey="avg"
+          name="Avg rating"
+          fill="#818cf8"
+          radius={[3, 3, 0, 0]}
+        />
+        <Bar
+          yAxisId="count"
+          dataKey="count"
+          name="Titles"
+          fill="#4ade80"
+          radius={[3, 3, 0, 0]}
+        />
       </BarChart>
     </ResponsiveContainer>
   );
