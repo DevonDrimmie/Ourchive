@@ -161,7 +161,13 @@ function AggregatedStatusBadges({
   );
 }
 
-function StackedRatings({ items }: { items: EntryWithProfile[] }) {
+function StackedRatings({
+  items,
+  showAvatars,
+}: {
+  items: EntryWithProfile[];
+  showAvatars: boolean;
+}) {
   const rated = items
     .filter((i) => i.entry.rating != null)
     .sort((a, b) =>
@@ -176,23 +182,25 @@ function StackedRatings({ items }: { items: EntryWithProfile[] }) {
         <Tooltip key={entry.id}>
           <TooltipTrigger asChild>
             <span className="flex cursor-default items-center gap-1.5">
-              <Avatar className="h-3.5 w-3.5 shrink-0">
-                {profile.avatar_url && (
-                  <AvatarImage
-                    src={profile.avatar_url}
-                    alt=""
-                    className="object-cover"
-                  />
-                )}
-                <AvatarFallback className="text-[7px] leading-none bg-muted">
-                  {profile.display_name
-                    ?.split(" ")
-                    .map((n) => n[0])
-                    .join("")
-                    .slice(0, 2)
-                    .toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
+              {showAvatars && (
+                <Avatar className="h-3.5 w-3.5 shrink-0">
+                  {profile.avatar_url && (
+                    <AvatarImage
+                      src={profile.avatar_url}
+                      alt=""
+                      className="object-cover"
+                    />
+                  )}
+                  <AvatarFallback className="text-[7px] leading-none bg-muted">
+                    {profile.display_name
+                      ?.split(" ")
+                      .map((n) => n[0])
+                      .join("")
+                      .slice(0, 2)
+                      .toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+              )}
               <RatingStars rating={entry.rating} size="sm" />
             </span>
           </TooltipTrigger>
@@ -334,29 +342,31 @@ export function BlendedMediaCard({
               <div className="space-y-2 border-t border-border/50 pt-2">
                 {reviewRows.map(({ entry, profile }) => (
                   <div key={entry.id} className="flex gap-2">
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <div className="shrink-0 pt-0.5">
-                          <Avatar className="h-6 w-6">
-                            {profile.avatar_url && (
-                              <AvatarImage
-                                src={profile.avatar_url}
-                                alt={profile.display_name}
-                              />
-                            )}
-                            <AvatarFallback className="text-[8px] bg-muted">
-                              {profile.display_name
-                                ?.split(" ")
-                                .map((n) => n[0])
-                                .join("")
-                                .slice(0, 2)
-                                .toUpperCase()}
-                            </AvatarFallback>
-                          </Avatar>
-                        </div>
-                      </TooltipTrigger>
-                      <TooltipContent side="left">{profile.display_name}</TooltipContent>
-                    </Tooltip>
+                    {users.length > 1 && (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className="shrink-0 pt-0.5">
+                            <Avatar className="h-6 w-6">
+                              {profile.avatar_url && (
+                                <AvatarImage
+                                  src={profile.avatar_url}
+                                  alt={profile.display_name}
+                                />
+                              )}
+                              <AvatarFallback className="text-[8px] bg-muted">
+                                {profile.display_name
+                                  ?.split(" ")
+                                  .map((n) => n[0])
+                                  .join("")
+                                  .slice(0, 2)
+                                  .toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent side="left">{profile.display_name}</TooltipContent>
+                      </Tooltip>
+                    )}
                     <div className="min-w-0 flex-1">
                       <p className="text-xs text-muted-foreground whitespace-pre-wrap wrap-break-word">
                         {entry.review}
@@ -371,7 +381,7 @@ export function BlendedMediaCard({
               <div className="min-w-0 flex-1">
                 <AggregatedStatusBadges items={items} mediaType={media.media_type} />
               </div>
-              <StackedRatings items={items} />
+              <StackedRatings items={items} showAvatars={users.length > 1} />
             </div>
           </div>
         </div>

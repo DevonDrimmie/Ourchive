@@ -87,28 +87,6 @@ function feedTimeOf(entry: FeedEntry): number {
   return new Date(entry.feed_bumped_at ?? entry.updated_at).getTime();
 }
 
-function describeGroup(items: FeedEntry[]): string {
-  const sorted = [...items].sort((a, b) => feedTimeOf(b) - feedTimeOf(a));
-  const latest = sorted[0]!;
-  const media = latest.media;
-
-  if (sorted.length === 1) {
-    return getActionText(latest, media, latest.profiles);
-  }
-
-  const uniqueProfiles = [
-    ...new Map(sorted.map((e) => [e.profiles.id, e.profiles])).values(),
-  ];
-  const names = uniqueProfiles.map((p) => p.display_name);
-  const formatted =
-    names.length === 2
-      ? `${names[0]} and ${names[1]}`
-      : `${names.slice(0, -1).join(", ")}, and ${names[names.length - 1]}`;
-
-  const thing = typeLabels[media.media_type];
-  return `${formatted} have entries for this ${thing}`;
-}
-
 function FeedGroup({ items }: { items: FeedEntry[] }) {
   const sorted = [...items].sort((a, b) => feedTimeOf(b) - feedTimeOf(a));
   const latest = sorted[0]!;
@@ -117,7 +95,7 @@ function FeedGroup({ items }: { items: FeedEntry[] }) {
   const timeAgo = formatDistanceToNow(new Date(feedTimeOf(latest)), {
     addSuffix: true,
   });
-  const headline = describeGroup(sorted);
+  const headline = getActionText(latest, media, latest.profiles);
 
   return (
     <div className="w-full min-w-0">
