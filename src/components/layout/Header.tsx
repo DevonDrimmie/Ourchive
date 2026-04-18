@@ -9,6 +9,7 @@ import {
   Film,
   Tv,
   BookOpen,
+  BookText,
   Disc3,
   Loader2,
   Plus,
@@ -308,6 +309,18 @@ export function Header() {
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
+          <Button
+            asChild
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8"
+            aria-label="Collection"
+          >
+            <Link to="/collection">
+              <BookText className="h-4 w-4" />
+            </Link>
+          </Button>
+
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="h-8 w-8 rounded-full p-0">

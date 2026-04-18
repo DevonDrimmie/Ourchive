@@ -13,6 +13,8 @@ import { ImportPage } from "@/pages/Import";
 import { ProfilePage } from "@/pages/Profile";
 import { MediaDashboardPage } from "@/pages/MediaDashboard";
 import { SignUpPage } from "@/pages/SignUp";
+import { ForgotPasswordPage } from "@/pages/ForgotPassword";
+import { ResetPasswordPage } from "@/pages/ResetPassword";
 import { Loader2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -106,6 +108,11 @@ function AppRoutes() {
         path="/signup"
         element={user ? <Navigate to="/" replace /> : <SignUpPage />}
       />
+      <Route
+        path="/forgot-password"
+        element={user ? <Navigate to="/" replace /> : <ForgotPasswordPage />}
+      />
+      <Route path="/reset-password" element={<ResetPasswordPage />} />
       <Route
         path="/"
         element={
