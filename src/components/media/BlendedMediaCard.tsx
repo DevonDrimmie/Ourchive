@@ -377,7 +377,14 @@ export function BlendedMediaCard({
               </div>
             )}
 
-            <div className="mt-auto flex items-start justify-between gap-2 pt-1">
+            <div
+              className={cn(
+                "mt-auto flex items-start justify-between gap-2 pt-1",
+                showReviews &&
+                  reviewRows.length > 0 &&
+                  "mt-3 border-t border-border/50 pt-3"
+              )}
+            >
               <div className="min-w-0 flex-1">
                 <AggregatedStatusBadges items={items} mediaType={media.media_type} />
               </div>
