@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Film, Tv, BookOpen, Disc3 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -161,6 +161,11 @@ function AggregatedStatusBadges({
   );
 }
 
+/** Stop the parent card's navigation so an inner profile link wins. */
+function stopCardNav(e: React.MouseEvent) {
+  e.stopPropagation();
+}
+
 function StackedRatings({
   items,
   showAvatars,
@@ -183,23 +188,30 @@ function StackedRatings({
           <TooltipTrigger asChild>
             <span className="flex cursor-default items-center gap-1.5">
               {showAvatars && (
-                <Avatar className="h-3.5 w-3.5 shrink-0">
-                  {profile.avatar_url && (
-                    <AvatarImage
-                      src={profile.avatar_url}
-                      alt=""
-                      className="object-cover"
-                    />
-                  )}
-                  <AvatarFallback className="text-[7px] leading-none bg-muted">
-                    {profile.display_name
-                      ?.split(" ")
-                      .map((n) => n[0])
-                      .join("")
-                      .slice(0, 2)
-                      .toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
+                <Link
+                  to={`/profile/${profile.id}`}
+                  onClick={stopCardNav}
+                  className="shrink-0 hover:opacity-80 transition-opacity"
+                  aria-label={profile.display_name}
+                >
+                  <Avatar className="h-3.5 w-3.5">
+                    {profile.avatar_url && (
+                      <AvatarImage
+                        src={profile.avatar_url}
+                        alt=""
+                        className="object-cover"
+                      />
+                    )}
+                    <AvatarFallback className="text-[7px] leading-none bg-muted">
+                      {profile.display_name
+                        ?.split(" ")
+                        .map((n) => n[0])
+                        .join("")
+                        .slice(0, 2)
+                        .toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                </Link>
               )}
               <RatingStars rating={entry.rating} size="sm" />
             </span>
@@ -219,7 +231,10 @@ export function BlendedMediaCard({
   showReviews = true,
   className,
 }: BlendedMediaCardProps) {
+  const navigate = useNavigate();
   const Icon = typeIcons[media.media_type];
+
+  const goToMedia = () => navigate(`/media/${media.id}`);
   const subtitle =
     media.media_type === "record"
       ? (media.metadata as { artist?: string })?.artist
@@ -240,7 +255,18 @@ export function BlendedMediaCard({
     );
 
   return (
-    <Link to={`/media/${media.id}`} className="block h-full">
+    <div
+      role="link"
+      tabIndex={0}
+      onClick={goToMedia}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          goToMedia();
+        }
+      }}
+      className="block h-full cursor-pointer"
+    >
       <Card
         className={cn(
           "group h-full overflow-hidden border-border/50 bg-card py-0 gap-0 hover:border-primary/30 transition-all duration-200",
@@ -295,8 +321,11 @@ export function BlendedMediaCard({
                 {users.map((profile, idx) => (
                   <Tooltip key={profile.id}>
                     <TooltipTrigger asChild>
-                      <div
-                        className="relative shrink-0 rounded-full ring-2 ring-card"
+                      <Link
+                        to={`/profile/${profile.id}`}
+                        onClick={stopCardNav}
+                        aria-label={profile.display_name}
+                        className="relative shrink-0 rounded-full ring-2 ring-card hover:opacity-80 transition-opacity"
                         style={{ zIndex: users.length - idx }}
                       >
                         <Avatar className="h-6 w-6">
@@ -315,7 +344,7 @@ export function BlendedMediaCard({
                               .toUpperCase()}
                           </AvatarFallback>
                         </Avatar>
-                      </div>
+                      </Link>
                     </TooltipTrigger>
                     <TooltipContent>{profile.display_name}</TooltipContent>
                   </Tooltip>
@@ -345,7 +374,12 @@ export function BlendedMediaCard({
                     {users.length > 1 && (
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <div className="shrink-0 pt-0.5">
+                          <Link
+                            to={`/profile/${profile.id}`}
+                            onClick={stopCardNav}
+                            aria-label={profile.display_name}
+                            className="shrink-0 pt-0.5 hover:opacity-80 transition-opacity"
+                          >
                             <Avatar className="h-6 w-6">
                               {profile.avatar_url && (
                                 <AvatarImage
@@ -362,7 +396,7 @@ export function BlendedMediaCard({
                                   .toUpperCase()}
                               </AvatarFallback>
                             </Avatar>
-                          </div>
+                          </Link>
                         </TooltipTrigger>
                         <TooltipContent side="left">{profile.display_name}</TooltipContent>
                       </Tooltip>
@@ -393,6 +427,6 @@ export function BlendedMediaCard({
           </div>
         </div>
       </Card>
-    </Link>
+    </div>
   );
 }

@@ -92,17 +92,27 @@ function FeedGroup({ items }: { items: FeedEntry[] }) {
   const sorted = [...items].sort((a, b) => feedTimeOf(b) - feedTimeOf(a));
   const latest = sorted[0]!;
   const media = latest.media;
+  const profile = latest.profiles;
 
   const timeAgo = formatDistanceToNow(new Date(feedTimeOf(latest)), {
     addSuffix: true,
   });
-  const headline = getActionText(latest, media, latest.profiles);
+  const fullText = getActionText(latest, media, profile);
+  const restOfText = fullText.startsWith(profile.display_name)
+    ? fullText.slice(profile.display_name.length).trimStart()
+    : fullText;
 
   return (
     <div className="w-full min-w-0">
       <div className="mb-2 flex min-w-0 items-center gap-2">
         <p className="min-w-0 flex-1 truncate text-sm text-foreground">
-          {headline}
+          <Link
+            to={`/profile/${profile.id}`}
+            className="font-medium hover:underline underline-offset-2"
+          >
+            {profile.display_name}
+          </Link>{" "}
+          {restOfText}
         </p>
         <span className="shrink-0 text-xs text-muted-foreground">{timeAgo}</span>
       </div>

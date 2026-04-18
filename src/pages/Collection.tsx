@@ -19,6 +19,7 @@ import {
 import { useAuth } from "@/lib/hooks/useAuth";
 import { Loader2 } from "lucide-react";
 import type { Media, Entry, Profile } from "@/types";
+import { cn } from "@/lib/utils";
 
 const typeFilters = [
   { value: "all", label: "All", path: "/collection" },
@@ -47,6 +48,7 @@ const sortOptions = [
   { value: "date", label: "Recent" },
   { value: "rating", label: "Rating" },
   { value: "title", label: "Title" },
+  { value: "year", label: "Release Year" },
 ];
 
 export function CollectionPage() {
@@ -59,6 +61,7 @@ export function CollectionPage() {
   const [sortBy, setSortBy] = useState("date");
   const [userId, setUserId] = useState<string>(user?.id ?? "");
   const [ownershipFilter, setOwnershipFilter] = useState<string>("all");
+  const [genreFilter, setGenreFilter] = useState<string>("all");
 
   const { data: profiles } = useProfiles();
 
@@ -154,11 +157,62 @@ export function CollectionPage() {
         if (ra !== rb) return rb - ra;
         return ma.title.localeCompare(mb.title, undefined, { sensitivity: "base" });
       }
+      if (sortBy === "year") {
+        const ya = ma.year ?? -Infinity;
+        const yb = mb.year ?? -Infinity;
+        if (ya !== yb) return yb - ya;
+        return ma.title.localeCompare(mb.title, undefined, { sensitivity: "base" });
+      }
       return latestUpdate(b) - latestUpdate(a);
     });
 
     return groupArr;
   }, [entries, allEntriesForMedia, visibleMediaIds, sortBy, effectiveUserId]);
+
+  /** Sorted list of unique genres present in the visible media, alphabetical. */
+  const availableGenres = useMemo(() => {
+    const set = new Set<string>();
+    for (const group of groupedByMedia) {
+      const m = group[0]!.media;
+      for (const g of m.genres ?? []) {
+        if (g) set.add(g);
+      }
+    }
+    return Array.from(set).sort((a, b) =>
+      a.localeCompare(b, undefined, { sensitivity: "base" })
+    );
+  }, [groupedByMedia]);
+
+  /** Apply the client-side genre filter (server filter doesn't know about genres). */
+  const filteredGroups = useMemo(() => {
+    if (genreFilter === "all") return groupedByMedia;
+    return groupedByMedia.filter((group) => {
+      const m = group[0]!.media;
+      return (m.genres ?? []).includes(genreFilter);
+    });
+  }, [groupedByMedia, genreFilter]);
+
+  /**
+   * For year sorting, partition into year sections and drop empty years.
+   * `null` years are bucketed at the end as "Unknown".
+   */
+  const yearSections = useMemo(() => {
+    if (sortBy !== "year") return null;
+    const buckets = new Map<string, typeof filteredGroups>();
+    for (const group of filteredGroups) {
+      const y = group[0]!.media.year;
+      const key = y == null ? "Unknown" : String(y);
+      if (!buckets.has(key)) buckets.set(key, []);
+      buckets.get(key)!.push(group);
+    }
+    const entries = Array.from(buckets.entries()).filter(([, g]) => g.length > 0);
+    entries.sort(([a], [b]) => {
+      if (a === "Unknown") return 1;
+      if (b === "Unknown") return -1;
+      return Number(b) - Number(a);
+    });
+    return entries;
+  }, [filteredGroups, sortBy]);
 
   return (
     <PageShell>
@@ -220,10 +274,33 @@ export function CollectionPage() {
 
         <div className="flex flex-col gap-1">
           <label className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+            Genre
+          </label>
+          <Select
+            value={genreFilter}
+            onValueChange={setGenreFilter}
+            disabled={availableGenres.length === 0}
+          >
+            <SelectTrigger className="w-36 h-8 text-xs">
+              <SelectValue placeholder="Genre" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Any</SelectItem>
+              {availableGenres.map((g) => (
+                <SelectItem key={g} value={g}>
+                  {g}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="flex flex-col gap-1">
+          <label className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
             Sort by
           </label>
           <Select value={sortBy} onValueChange={setSortBy}>
-            <SelectTrigger className="w-28 h-8 text-xs">
+            <SelectTrigger className="w-32 h-8 text-xs">
               <SelectValue placeholder="Sort" />
             </SelectTrigger>
             <SelectContent>
@@ -265,9 +342,49 @@ export function CollectionPage() {
         <div className="flex items-center justify-center py-20">
           <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
         </div>
-      ) : groupedByMedia.length > 0 ? (
+      ) : filteredGroups.length === 0 ? (
+        <div className="flex items-center justify-center py-20">
+          <p className="text-sm text-muted-foreground">
+            No entries match the current filters
+          </p>
+        </div>
+      ) : yearSections ? (
+        <div className="space-y-6">
+          {yearSections.map(([year, groups], idx) => (
+            <section key={year}>
+              <div
+                className={cn(
+                  "mb-3 flex items-baseline gap-3",
+                  idx > 0 && "border-t border-border/50 pt-4"
+                )}
+              >
+                <h2 className="text-lg font-semibold tracking-tight">{year}</h2>
+                <span className="text-xs text-muted-foreground">
+                  {groups.length} item{groups.length === 1 ? "" : "s"}
+                </span>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {groups.map((group) => {
+                  const media = group[0]!.media;
+                  return (
+                    <BlendedMediaCard
+                      key={media.id}
+                      media={media}
+                      showReviews={false}
+                      items={group.map((e) => ({
+                        entry: e,
+                        profile: e.profiles,
+                      }))}
+                    />
+                  );
+                })}
+              </div>
+            </section>
+          ))}
+        </div>
+      ) : (
         <div className="grid gap-3 sm:grid-cols-2">
-          {groupedByMedia.map((group) => {
+          {filteredGroups.map((group) => {
             const media = group[0]!.media;
             return (
               <BlendedMediaCard
@@ -281,12 +398,6 @@ export function CollectionPage() {
               />
             );
           })}
-        </div>
-      ) : (
-        <div className="flex items-center justify-center py-20">
-          <p className="text-sm text-muted-foreground">
-            No entries match the current filters
-          </p>
         </div>
       )}
     </PageShell>
