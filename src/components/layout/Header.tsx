@@ -14,6 +14,7 @@ import {
   Loader2,
   Plus,
   FileUp,
+  KeyRound,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,6 +28,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { ChangePasswordDialog } from "@/components/auth/ChangePasswordDialog";
 import { useAuth } from "@/lib/hooks/useAuth";
 import { useProfiles } from "@/lib/hooks/useEntries";
 import { useOmniSearch } from "@/lib/hooks/useOmniSearch";
@@ -262,6 +264,7 @@ function MobileNavLinks({ onClick }: { onClick?: () => void }) {
 export function Header() {
   const { user, profile, signOut } = useAuth();
   const navigate = useNavigate();
+  const [changePasswordOpen, setChangePasswordOpen] = useState(false);
   const initials = profile?.display_name
     ?.split(" ")
     .map((n) => n[0])
@@ -353,6 +356,10 @@ export function Header() {
                 Import
               </DropdownMenuItem>
               <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => setChangePasswordOpen(true)}>
+                <KeyRound className="mr-2 h-4 w-4" />
+                Change Password
+              </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={signOut}
                 className="text-destructive focus:text-destructive"
@@ -362,6 +369,11 @@ export function Header() {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+
+          <ChangePasswordDialog
+            open={changePasswordOpen}
+            onOpenChange={setChangePasswordOpen}
+          />
 
           <Sheet>
             <SheetTrigger asChild>
