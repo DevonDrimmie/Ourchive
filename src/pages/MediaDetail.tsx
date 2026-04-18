@@ -8,6 +8,7 @@ import { EditEntryDialog } from "@/components/entry/EditEntryDialog";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useMediaDetail, useMediaEntries } from "@/lib/hooks/useEntries";
 import { useAuth } from "@/lib/hooks/useAuth";
@@ -126,10 +127,46 @@ export function MediaDetailPage() {
 
               const isOwner = user?.id === entry.user_id;
 
+              const dateLabel = entry.consumed_date
+                ? format(new Date(entry.consumed_date), "MMM d, yyyy")
+                : null;
+
               return (
-                <Card key={entry.id} className="border-border/50">
-                  <CardContent className="pt-4">
-                    <div className="flex items-center gap-3 mb-3">
+                <Card
+                  key={entry.id}
+                  className="group relative border-border/50 gap-0 py-4"
+                >
+                  <CardContent className="px-4">
+                    {dateLabel && (
+                      <div
+                        className={cn(
+                          "pointer-events-none absolute right-3 top-3 flex items-center gap-1.5 text-xs text-muted-foreground transition-opacity",
+                          isOwner &&
+                            "group-hover:opacity-0 group-focus-within:opacity-0"
+                        )}
+                      >
+                        <Calendar className="h-3 w-3" />
+                        {dateLabel}
+                      </div>
+                    )}
+
+                    {isOwner && (
+                      <button
+                        type="button"
+                        onClick={() => setEditingEntry(entry)}
+                        aria-label="Edit entry"
+                        className={cn(
+                          "absolute right-2.5 top-2.5 rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-accent transition-all",
+                          dateLabel
+                            ? "opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100"
+                            : "opacity-60 hover:opacity-100"
+                        )}
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+
+                    <div className="flex items-center gap-3 mb-3 pr-10">
                       <Link
                         to={`/profile/${entry.user_id}`}
                         className="shrink-0 hover:opacity-80 transition-opacity"
@@ -144,7 +181,7 @@ export function MediaDetailPage() {
                           </AvatarFallback>
                         </Avatar>
                       </Link>
-                      <div className="flex-1 min-w-0">
+                      <div className="min-w-0 flex-1">
                         <Link
                           to={`/profile/${entry.user_id}`}
                           className="text-sm font-medium hover:underline underline-offset-2"
@@ -155,14 +192,6 @@ export function MediaDetailPage() {
                           {MEDIA_TYPE_VERB[media.media_type as MediaType]?.[entry.status as EntryStatus]}
                         </p>
                       </div>
-                      {isOwner && (
-                        <button
-                          onClick={() => setEditingEntry(entry)}
-                          className="shrink-0 rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-                        >
-                          <Pencil className="h-3.5 w-3.5" />
-                        </button>
-                      )}
                     </div>
 
                     <StatusBadge
@@ -178,15 +207,8 @@ export function MediaDetailPage() {
                       </div>
                     )}
 
-                    {entry.consumed_date && (
-                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-2">
-                        <Calendar className="h-3 w-3" />
-                        {format(new Date(entry.consumed_date), "MMM d, yyyy")}
-                      </div>
-                    )}
-
                     {entry.review && (
-                      <p className="text-sm text-muted-foreground leading-relaxed mt-2">
+                      <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
                         {entry.review}
                       </p>
                     )}
