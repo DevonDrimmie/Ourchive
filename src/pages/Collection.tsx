@@ -107,20 +107,23 @@ export function CollectionPage() {
 
   return (
     <PageShell>
-      <h1 className="text-2xl font-bold tracking-tight">Collection</h1>
-      <p className="text-sm text-muted-foreground">
-        Browse all logged media
-      </p>
-
-      <Tabs value={mediaType} onValueChange={handleTabChange} className="mt-4">
-        <TabsList>
-          {typeFilters.map((f) => (
-            <TabsTrigger key={f.value} value={f.value} className="text-xs">
-              {f.label}
-            </TabsTrigger>
-          ))}
-        </TabsList>
-      </Tabs>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Collection</h1>
+          <p className="text-sm text-muted-foreground">
+            Browse all logged media
+          </p>
+        </div>
+        <Tabs value={mediaType} onValueChange={handleTabChange}>
+          <TabsList>
+            {typeFilters.map((f) => (
+              <TabsTrigger key={f.value} value={f.value} className="text-xs">
+                {f.label}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </Tabs>
+      </div>
 
       <div className="mt-3 flex flex-wrap gap-3">
         <div className="flex flex-col gap-1">

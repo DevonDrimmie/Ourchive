@@ -6,7 +6,7 @@ import { RatingStars } from "@/components/media/RatingStars";
 import { PageShell } from "@/components/layout/PageShell";
 import { useFeed } from "@/lib/hooks/useEntries";
 import type { Media, Entry, Profile, MediaType } from "@/types";
-import { Loader2, Plus, Film, Tv, BookOpen, Disc3 } from "lucide-react";
+import { Loader2, Film, Tv, BookOpen, Disc3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
@@ -249,30 +249,23 @@ export function HomePage() {
 
   return (
     <PageShell>
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Activity</h1>
           <p className="text-sm text-muted-foreground">
             Recent entries from both of you
           </p>
         </div>
-        <Button asChild size="sm">
-          <Link to="/search">
-            <Plus className="mr-2 h-4 w-4" />
-            Add
-          </Link>
-        </Button>
+        <Tabs value={filter} onValueChange={handleTabChange}>
+          <TabsList>
+            {filters.map((f) => (
+              <TabsTrigger key={f.value} value={f.value} className="text-xs">
+                {f.label}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </Tabs>
       </div>
-
-      <Tabs value={filter} onValueChange={handleTabChange} className="mt-4">
-        <TabsList>
-          {filters.map((f) => (
-            <TabsTrigger key={f.value} value={f.value} className="text-xs">
-              {f.label}
-            </TabsTrigger>
-          ))}
-        </TabsList>
-      </Tabs>
 
       {isLoading ? (
         <div className="flex items-center justify-center py-20">
