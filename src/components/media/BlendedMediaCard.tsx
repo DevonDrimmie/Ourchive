@@ -358,11 +358,6 @@ export function BlendedMediaCard({
                       <TooltipContent side="left">{profile.display_name}</TooltipContent>
                     </Tooltip>
                     <div className="min-w-0 flex-1">
-                      {entry.rating != null && (
-                        <div className="mb-0.5">
-                          <RatingStars rating={entry.rating} size="sm" />
-                        </div>
-                      )}
                       <p className="text-xs text-muted-foreground whitespace-pre-wrap wrap-break-word">
                         {entry.review}
                       </p>
