@@ -82,7 +82,7 @@
     @apply border-border;
   }
   html, body {
-    overflow-x: hidden;
+    overflow-x: clip;
     padding-right: 0 !important;
     margin-right: 0 !important;
   }
