@@ -5,15 +5,20 @@ import { CoverImage } from "@/components/media/CoverImage";
 import { RatingStars } from "@/components/media/RatingStars";
 import { StatusBadge } from "@/components/media/StatusBadge";
 import { EditEntryDialog } from "@/components/entry/EditEntryDialog";
+import {
+  EntryDetailsLine,
+  MediaDetailsSection,
+} from "@/components/media/MediaDetailsSection";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
+import { byCoverShape, getMediaSubtitle } from "@/lib/media";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useMediaDetail, useMediaEntries } from "@/lib/hooks/useEntries";
 import { useAuth } from "@/lib/hooks/useAuth";
 import { MEDIA_TYPE_LABELS, MEDIA_TYPE_VERB } from "@/types";
-import type { Profile, Entry, EntryStatus, MediaType } from "@/types";
+import type { Profile, Entry, EntryStatus } from "@/types";
 import { ArrowLeft, Loader2, Calendar, Pencil } from "lucide-react";
 import { format } from "date-fns";
 
@@ -43,14 +48,7 @@ export function MediaDetailPage() {
     );
   }
 
-  const subtitle =
-    media.media_type === "record"
-      ? (media.metadata as { artist?: string })?.artist
-      : media.media_type === "book"
-        ? (media.metadata as { authors?: string[] })?.authors?.join(", ")
-        : undefined;
-
-  const overview = (media.metadata as { overview?: string })?.overview;
+  const subtitle = getMediaSubtitle(media);
 
   return (
     <PageShell>
@@ -67,11 +65,14 @@ export function MediaDetailPage() {
           src={media.cover_url}
           alt={media.title}
           mediaType={media.media_type}
-          className={
-            media.media_type === "record"
-              ? "h-64 w-64 shrink-0 mx-auto sm:mx-0"
-              : "h-72 w-48 shrink-0 mx-auto sm:mx-0"
-          }
+          className={cn(
+            "shrink-0 mx-auto sm:mx-0",
+            byCoverShape(media.media_type, {
+              portrait: "h-72 w-48",
+              square: "h-64 w-64",
+              landscape: "h-44 w-full max-w-sm sm:w-80",
+            })
+          )}
         />
 
         <div className="flex-1 min-w-0 space-y-3">
@@ -102,11 +103,7 @@ export function MediaDetailPage() {
             </div>
           )}
 
-          {overview && (
-            <p className="text-sm text-muted-foreground leading-relaxed break-words">
-              {overview}
-            </p>
-          )}
+          <MediaDetailsSection media={media} />
         </div>
       </div>
 
@@ -189,7 +186,7 @@ export function MediaDetailPage() {
                           {entry.profiles?.display_name}
                         </Link>
                         <p className="text-xs text-muted-foreground">
-                          {MEDIA_TYPE_VERB[media.media_type as MediaType]?.[entry.status as EntryStatus]}
+                          {MEDIA_TYPE_VERB[media.media_type][entry.status as EntryStatus]}
                         </p>
                       </div>
                     </div>
@@ -197,8 +194,14 @@ export function MediaDetailPage() {
                     <StatusBadge
                       status={entry.status as EntryStatus}
                       ownership={entry.ownership}
-                      mediaType={media.media_type as MediaType}
+                      mediaType={media.media_type}
                       className="mb-2"
+                    />
+
+                    <EntryDetailsLine
+                      mediaType={media.media_type}
+                      details={entry.details}
+                      className="mb-2 text-xs text-muted-foreground"
                     />
 
                     {entry.rating != null && (
@@ -225,7 +228,7 @@ export function MediaDetailPage() {
       <EditEntryDialog
         entry={editingEntry}
         media={media}
-        mediaType={media.media_type as MediaType}
+        mediaType={media.media_type}
         open={editingEntry !== null}
         onOpenChange={(open) => {
           if (!open) setEditingEntry(null);

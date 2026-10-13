@@ -9,7 +9,10 @@ interface MbRelease {
     "primary-type"?: string;
     "secondary-types"?: string[];
   };
+  "label-info"?: { label?: { name?: string } }[];
+  "track-count"?: number;
   "tag-list"?: { name: string }[];
+  tags?: { name: string }[];
 }
 
 const COVER_BASE = "https://coverartarchive.org/release";
@@ -25,23 +28,29 @@ export async function searchRecords(query: string): Promise<SearchResult[]> {
   );
   const data = await res.json();
 
-  return (data.releases ?? []).slice(0, 10).map((r: MbRelease) => {
+  return (data.releases ?? []).slice(0, 10).map((r: MbRelease): SearchResult => {
     const artist = r["artist-credit"]?.[0]?.name ?? "Unknown Artist";
     const year = r.date ? parseInt(r.date.slice(0, 4)) : null;
-    const types = [
+    const releaseTypes = [
       r["release-group"]?.["primary-type"],
       ...(r["release-group"]?.["secondary-types"] ?? []),
     ].filter(Boolean) as string[];
+    const tags = (r.tags ?? r["tag-list"] ?? []).slice(0, 5).map((t) => t.name);
 
     return {
       external_id: r.id,
       external_source: "musicbrainz",
-      media_type: "record" as const,
+      media_type: "record",
       title: r.title,
       year: isNaN(year ?? NaN) ? null : year,
       cover_url: `${COVER_BASE}/${r.id}/front-250`,
-      genres: types.length > 0 ? types : (r["tag-list"] ?? []).slice(0, 5).map((t) => t.name),
-      metadata: { artist },
+      genres: tags,
+      details: {
+        artist,
+        release_type: releaseTypes.join(" / ") || null,
+        label: r["label-info"]?.find((l) => l.label?.name)?.label?.name ?? null,
+        track_count: r["track-count"] ?? null,
+      },
     };
   });
 }

@@ -43,18 +43,24 @@ export async function searchMovies(query: string): Promise<SearchResult[]> {
   );
   const data = await res.json();
 
-  return (data.results ?? []).slice(0, 10).map((m: TmdbMovie) => ({
-    external_id: String(m.id),
-    external_source: "tmdb_movie",
-    media_type: "movie" as const,
-    title: m.title,
-    year: m.release_date ? parseInt(m.release_date.slice(0, 4)) : null,
-    cover_url: m.poster_path ? `${IMG_BASE}${m.poster_path}` : null,
-    genres: (m.genre_ids ?? [])
-      .map((id) => MOVIE_GENRES[id])
-      .filter(Boolean) as string[],
-    metadata: { overview: m.overview },
-  }));
+  return (data.results ?? []).slice(0, 10).map(
+    (m: TmdbMovie): SearchResult => ({
+      external_id: String(m.id),
+      external_source: "tmdb_movie",
+      media_type: "movie",
+      title: m.title,
+      year: m.release_date ? parseInt(m.release_date.slice(0, 4)) : null,
+      cover_url: m.poster_path ? `${IMG_BASE}${m.poster_path}` : null,
+      genres: (m.genre_ids ?? [])
+        .map((id) => MOVIE_GENRES[id])
+        .filter(Boolean) as string[],
+      details: {
+        director: null,
+        overview: m.overview || null,
+        runtime_minutes: null,
+      },
+    })
+  );
 }
 
 export async function searchTv(query: string): Promise<SearchResult[]> {
@@ -64,16 +70,23 @@ export async function searchTv(query: string): Promise<SearchResult[]> {
   );
   const data = await res.json();
 
-  return (data.results ?? []).slice(0, 10).map((t: TmdbTv) => ({
-    external_id: String(t.id),
-    external_source: "tmdb_tv",
-    media_type: "tv" as const,
-    title: t.name,
-    year: t.first_air_date ? parseInt(t.first_air_date.slice(0, 4)) : null,
-    cover_url: t.poster_path ? `${IMG_BASE}${t.poster_path}` : null,
-    genres: (t.genre_ids ?? [])
-      .map((id) => TV_GENRES[id])
-      .filter(Boolean) as string[],
-    metadata: { overview: t.overview },
-  }));
+  return (data.results ?? []).slice(0, 10).map(
+    (t: TmdbTv): SearchResult => ({
+      external_id: String(t.id),
+      external_source: "tmdb_tv",
+      media_type: "tv",
+      title: t.name,
+      year: t.first_air_date ? parseInt(t.first_air_date.slice(0, 4)) : null,
+      cover_url: t.poster_path ? `${IMG_BASE}${t.poster_path}` : null,
+      genres: (t.genre_ids ?? [])
+        .map((id) => TV_GENRES[id])
+        .filter(Boolean) as string[],
+      details: {
+        creators: [],
+        overview: t.overview || null,
+        season_count: null,
+        episode_count: null,
+      },
+    })
+  );
 }

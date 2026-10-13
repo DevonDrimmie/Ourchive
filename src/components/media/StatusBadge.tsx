@@ -24,6 +24,7 @@ export const completedLabels: Partial<Record<MediaType, string>> = {
   movie: "Watched",
   tv: "Watched",
   book: "Read",
+  game: "Played",
 };
 
 export const ownershipConfig: Record<

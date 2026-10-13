@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { Film, Tv, BookOpen, Disc3, GripVertical, Loader2 } from "lucide-react";
+import { GripVertical, Loader2 } from "lucide-react";
 import {
   DndContext,
   PointerSensor,
@@ -33,13 +33,8 @@ import { useRankings, useSaveRankings } from "@/lib/hooks/useRankings";
 import type { EntryWithMedia } from "@/components/media/MediaCollectionInsights";
 import type { Media, MediaType } from "@/types";
 import { cn } from "@/lib/utils";
-
-const typeIcons: Record<MediaType, typeof Film> = {
-  movie: Film,
-  tv: Tv,
-  book: BookOpen,
-  record: Disc3,
-};
+import { byCoverShape } from "@/lib/media";
+import { MEDIA_TYPE_ICONS } from "@/components/media/mediaTypeIcons";
 
 /** Statuses considered "consumed" or "in the process of being consumed". */
 function isConsumedEntry(e: EntryWithMedia): boolean {
@@ -64,12 +59,16 @@ function filterYear(e: EntryWithMedia, mediaType: MediaType): number | null {
 }
 
 function CoverThumb({ media }: { media: Media }) {
-  const Icon = typeIcons[media.media_type];
+  const Icon = MEDIA_TYPE_ICONS[media.media_type];
   return (
     <div
       className={cn(
         "relative shrink-0 overflow-hidden rounded-md bg-muted",
-        media.media_type === "record" ? "h-14 w-14" : "h-16 w-12"
+        byCoverShape(media.media_type, {
+          portrait: "h-16 w-12",
+          square: "h-14 w-14",
+          landscape: "h-12 w-20",
+        })
       )}
     >
       {media.cover_url ? (

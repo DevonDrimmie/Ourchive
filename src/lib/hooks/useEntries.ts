@@ -1,38 +1,52 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
-import type { Entry, EntryStatus, Media, OwnershipStatus, Profile, SearchResult } from "@/types";
+import type {
+  Entry,
+  EntryDetails,
+  EntryFull,
+  EntryStatus,
+  EntryWithProfile,
+  MediaType,
+  OwnershipStatus,
+  Profile,
+  SearchResult,
+} from "@/types";
 import { shouldBumpFeedEvent } from "@/lib/feedBump";
+import { enrichGame } from "@/lib/api/rawg";
+import {
+  ENTRY_DETAILS_SELECT,
+  ENTRY_DETAIL_TABLES,
+  MEDIA_SELECT,
+  entrySelect,
+  normalizeEntry,
+  normalizeMedia,
+  toUpsertMediaArgs,
+  type RawMediaRow,
+} from "@/lib/media";
 import { useAuth } from "./useAuth";
 
+/** Find-or-create the media row and its typed subtype row; returns media id. */
 export async function upsertMedia(result: SearchResult): Promise<string> {
-  if (result.external_id && result.external_source) {
-    const { data: existing } = await supabase
-      .from("media")
-      .select("id")
-      .eq("external_id", result.external_id)
-      .eq("external_source", result.external_source)
-      .single();
+  const toSave =
+    result.media_type === "game"
+      ? await enrichGame(result).catch(() => result)
+      : result;
 
-    if (existing) return existing.id;
-  }
-
-  const { data, error } = await supabase
-    .from("media")
-    .insert({
-      media_type: result.media_type,
-      title: result.title,
-      year: result.year,
-      cover_url: result.cover_url,
-      genres: result.genres,
-      external_id: result.external_id,
-      external_source: result.external_source,
-      metadata: result.metadata,
-    })
-    .select("id")
-    .single();
-
+  const { data, error } = await supabase.rpc("upsert_media", toUpsertMediaArgs(toSave));
   if (error) throw error;
-  return data.id;
+  return data as string;
+}
+
+/** Insert or replace the type-specific details row for an entry. */
+export async function saveEntryDetails(
+  entryId: string,
+  mediaType: MediaType,
+  details: EntryDetails
+): Promise<void> {
+  const { error } = await supabase
+    .from(ENTRY_DETAIL_TABLES[mediaType])
+    .upsert({ entry_id: entryId, ...details }, { onConflict: "entry_id" });
+  if (error) throw error;
 }
 
 interface CreateEntryParams {
@@ -42,6 +56,7 @@ interface CreateEntryParams {
   rating?: number | null;
   review?: string | null;
   consumed_date?: string | null;
+  details?: EntryDetails | null;
 }
 
 export function useCreateEntry() {
@@ -93,6 +108,10 @@ export function useCreateEntry() {
         .single();
 
       if (error) throw error;
+
+      if (params.details) {
+        await saveEntryDetails(data.id, params.searchResult.media_type, params.details);
+      }
       return data;
     },
     onSuccess: () => {
@@ -102,14 +121,18 @@ export function useCreateEntry() {
   });
 }
 
+type UpdateEntryParams = Partial<Omit<Entry, "details">> & {
+  id: string;
+  /** Required to save `details` (selects the *_entry_details table). */
+  mediaType?: MediaType;
+  details?: EntryDetails | null;
+};
+
 export function useUpdateEntry() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({
-      id,
-      ...updates
-    }: Partial<Entry> & { id: string }) => {
+    mutationFn: async ({ id, mediaType, details, ...updates }: UpdateEntryParams) => {
       const { data: prev, error: fetchError } = await supabase
         .from("entries")
         .select("*")
@@ -161,6 +184,10 @@ export function useUpdateEntry() {
         .single();
 
       if (error) throw error;
+
+      if (details && mediaType) {
+        await saveEntryDetails(id, mediaType, details);
+      }
       return data;
     },
     onSuccess: () => {
@@ -187,19 +214,22 @@ export function useDeleteEntry() {
   });
 }
 
+function toEntriesWithMedia(rows: Record<string, unknown>[] | null): EntryFull[] {
+  return (rows ?? [])
+    .filter((r) => r.media != null)
+    .map((r) => normalizeEntry<EntryFull>(r));
+}
+
 export function useFeed(mediaTypeFilter?: string) {
   return useQuery({
     queryKey: ["feed", mediaTypeFilter],
     queryFn: async () => {
       const useInner =
         mediaTypeFilter && mediaTypeFilter !== "all";
-      const selectStr = useInner
-        ? "*, media!inner(*), profiles(*)"
-        : "*, media(*), profiles(*)";
 
       let query = supabase
         .from("entries")
-        .select(selectStr)
+        .select(entrySelect({ innerMedia: !!useInner }))
         .order("feed_bumped_at", { ascending: false })
         .limit(50);
 
@@ -209,9 +239,7 @@ export function useFeed(mediaTypeFilter?: string) {
 
       const { data, error } = await query;
       if (error) throw error;
-      return (data ?? []).filter(
-        (e: { media: Media | null }) => e.media !== null
-      );
+      return toEntriesWithMedia(data as unknown as Record<string, unknown>[] | null);
     },
   });
 }
@@ -230,13 +258,10 @@ export function useCollection(filters: CollectionFilters) {
     queryFn: async () => {
       const useInner =
         filters.mediaType && filters.mediaType !== "all";
-      const selectStr = useInner
-        ? "*, media!inner(*), profiles(*)"
-        : "*, media(*), profiles(*)";
 
       let query = supabase
         .from("entries")
-        .select(selectStr);
+        .select(entrySelect({ innerMedia: !!useInner }));
 
       if (useInner) {
         query = query.eq("media.media_type", filters.mediaType);
@@ -269,9 +294,7 @@ export function useCollection(filters: CollectionFilters) {
 
       const { data, error } = await query;
       if (error) throw error;
-      return (data ?? []).filter(
-        (e: { media: Media | null }) => e.media !== null
-      );
+      return toEntriesWithMedia(data as unknown as Record<string, unknown>[] | null);
     },
   });
 }
@@ -282,11 +305,13 @@ export function useMediaEntries(mediaId: string) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("entries")
-        .select("*, profiles(*)")
+        .select(`*, ${ENTRY_DETAILS_SELECT}, profiles(*)`)
         .eq("media_id", mediaId);
 
       if (error) throw error;
-      return data ?? [];
+      return ((data ?? []) as unknown as Record<string, unknown>[]).map((r) =>
+        normalizeEntry<EntryWithProfile>(r)
+      );
     },
     enabled: !!mediaId,
   });
@@ -305,11 +330,13 @@ export function useEntriesForMediaList(mediaIds: string[]) {
       if (mediaIds.length === 0) return [];
       const { data, error } = await supabase
         .from("entries")
-        .select("*, profiles(*)")
+        .select(`*, ${ENTRY_DETAILS_SELECT}, profiles(*)`)
         .in("media_id", mediaIds);
 
       if (error) throw error;
-      return data ?? [];
+      return ((data ?? []) as unknown as Record<string, unknown>[]).map((r) =>
+        normalizeEntry<EntryWithProfile>(r)
+      );
     },
     enabled: mediaIds.length > 0,
   });
@@ -321,12 +348,12 @@ export function useMediaDetail(mediaId: string) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("media")
-        .select("*")
+        .select(MEDIA_SELECT)
         .eq("id", mediaId)
         .single();
 
       if (error) throw error;
-      return data as Media;
+      return normalizeMedia(data as unknown as RawMediaRow);
     },
     enabled: !!mediaId,
   });

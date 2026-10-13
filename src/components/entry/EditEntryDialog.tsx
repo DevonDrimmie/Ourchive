@@ -18,6 +18,8 @@ import {
 } from "@/components/ui/select";
 import { RatingStars } from "@/components/media/RatingStars";
 import { CoverImage } from "@/components/media/CoverImage";
+import { EntryTypeFields } from "@/components/entry/EntryTypeFields";
+import { MEDIA_TYPE_ICONS } from "@/components/media/mediaTypeIcons";
 import {
   useUpdateEntry,
   useDeleteEntry,
@@ -26,6 +28,7 @@ import {
 import { useMediaTypeSearch } from "@/lib/hooks/useOmniSearch";
 import type {
   Entry,
+  EntryDetails,
   Media,
   MediaType,
   EntryStatus,
@@ -38,15 +41,14 @@ import {
   MEDIA_TYPE_VERB,
   OWNERSHIP_LABELS,
 } from "@/types";
-import { Loader2, Trash2, Film, Tv, BookOpen, Disc3, Search } from "lucide-react";
+import { Loader2, Trash2, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-const typeIcons: Record<MediaType, typeof Film> = {
-  movie: Film,
-  tv: Tv,
-  book: BookOpen,
-  record: Disc3,
-};
+import {
+  EMPTY_ENTRY_DETAILS,
+  byCoverShape,
+  getMediaSubtitle,
+  isEmptyEntryDetails,
+} from "@/lib/media";
 
 interface EditEntryDialogProps {
   entry: Entry | null;
@@ -57,14 +59,6 @@ interface EditEntryDialogProps {
   onOpenChange: (open: boolean) => void;
   /** Called after save when the entry was relinked to different media (e.g. navigate to new detail URL). */
   onMediaChanged?: (newMediaId: string) => void;
-}
-
-function resultSubtitle(result: SearchResult) {
-  return result.media_type === "record"
-    ? (result.metadata as { artist?: string })?.artist
-    : result.media_type === "book"
-      ? (result.metadata as { authors?: string[] })?.authors?.join(", ")
-      : undefined;
 }
 
 export function EditEntryDialog({
@@ -84,6 +78,7 @@ export function EditEntryDialog({
   const [rating, setRating] = useState<number | null>(null);
   const [review, setReview] = useState("");
   const [consumedDate, setConsumedDate] = useState("");
+  const [details, setDetails] = useState<EntryDetails>(EMPTY_ENTRY_DETAILS[mediaType]);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [showMediaSearch, setShowMediaSearch] = useState(false);
   const [mediaSearchQuery, setMediaSearchQuery] = useState("");
@@ -104,6 +99,7 @@ export function EditEntryDialog({
       setRating(entry.rating);
       setReview(entry.review ?? "");
       setConsumedDate(entry.consumed_date ?? "");
+      setDetails(entry.details ?? EMPTY_ENTRY_DETAILS[mediaType]);
       setConfirmDelete(false);
       setShowMediaSearch(false);
       setMediaSearchQuery("");
@@ -133,6 +129,9 @@ export function EditEntryDialog({
         review: review || null,
         consumed_date: consumedDate || null,
         ...mediaIdUpdate,
+        ...(entry.details || !isEmptyEntryDetails(mediaType, details)
+          ? { mediaType, details }
+          : {}),
       });
 
       if (mediaIdUpdate.media_id) {
@@ -173,9 +172,11 @@ export function EditEntryDialog({
                     mediaType={media.media_type}
                     className={cn(
                       "shrink-0",
-                      media.media_type === "record"
-                        ? "h-16 w-16"
-                        : "h-20 w-14"
+                      byCoverShape(media.media_type, {
+                        portrait: "h-20 w-14",
+                        square: "h-16 w-16",
+                        landscape: "h-14 w-24",
+                      })
                     )}
                   />
                   <div className="min-w-0 flex-1">
@@ -225,8 +226,8 @@ export function EditEntryDialog({
                     )}
                     <ul className="max-h-48 space-y-1 overflow-y-auto pr-0.5">
                       {searchHits.map((hit) => {
-                        const sub = resultSubtitle(hit);
-                        const RowIcon = typeIcons[hit.media_type];
+                        const sub = getMediaSubtitle(hit);
+                        const RowIcon = MEDIA_TYPE_ICONS[hit.media_type];
                         const selected =
                           replacementResult?.external_id === hit.external_id &&
                           replacementResult?.external_source ===
@@ -249,9 +250,11 @@ export function EditEntryDialog({
                                 mediaType={hit.media_type}
                                 className={cn(
                                   "shrink-0",
-                                  hit.media_type === "record"
-                                    ? "h-10 w-10"
-                                    : "h-12 w-8"
+                                  byCoverShape(hit.media_type, {
+                                    portrait: "h-12 w-8",
+                                    square: "h-10 w-10",
+                                    landscape: "h-9 w-16",
+                                  })
                                 )}
                               />
                               <div className="min-w-0 flex-1">
@@ -355,6 +358,13 @@ export function EditEntryDialog({
                 </div>
               </div>
             )}
+
+            <EntryTypeFields
+              mediaType={mediaType}
+              value={details}
+              onChange={setDetails}
+              platformOptions={media?.media_type === "game" ? media.details.platforms : []}
+            />
 
             {(!config.showStatus ||
               status === "completed" ||

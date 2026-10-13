@@ -1,5 +1,4 @@
 import { Link, useNavigate } from "react-router-dom";
-import { Film, Tv, BookOpen, Disc3 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -16,6 +15,8 @@ import {
 } from "./StatusBadge";
 import type { Media, Entry, Profile, EntryStatus, OwnershipStatus } from "@/types";
 import { cn } from "@/lib/utils";
+import { byCoverShape, getMediaSubtitle } from "@/lib/media";
+import { MEDIA_TYPE_ICONS } from "./mediaTypeIcons";
 
 export interface EntryWithProfile {
   entry: Entry;
@@ -29,13 +30,6 @@ interface BlendedMediaCardProps {
   showReviews?: boolean;
   className?: string;
 }
-
-const typeIcons = {
-  movie: Film,
-  tv: Tv,
-  book: BookOpen,
-  record: Disc3,
-} as const;
 
 const STATUS_ORDER: EntryStatus[] = [
   "want",
@@ -232,15 +226,10 @@ export function BlendedMediaCard({
   className,
 }: BlendedMediaCardProps) {
   const navigate = useNavigate();
-  const Icon = typeIcons[media.media_type];
+  const Icon = MEDIA_TYPE_ICONS[media.media_type];
 
   const goToMedia = () => navigate(`/media/${media.id}`);
-  const subtitle =
-    media.media_type === "record"
-      ? (media.metadata as { artist?: string })?.artist
-      : media.media_type === "book"
-        ? (media.metadata as { authors?: string[] })?.authors?.join(", ")
-        : undefined;
+  const subtitle = getMediaSubtitle(media);
 
   const users = [...new Map(items.map((i) => [i.profile.id, i.profile])).values()].sort(
     (a, b) => a.display_name.localeCompare(b.display_name)
@@ -277,7 +266,11 @@ export function BlendedMediaCard({
           <div
             className={cn(
               "relative shrink-0 overflow-hidden rounded-md bg-muted self-start",
-              media.media_type === "record" ? "h-24 w-24" : "h-28 w-20"
+              byCoverShape(media.media_type, {
+                portrait: "h-28 w-20",
+                square: "h-24 w-24",
+                landscape: "h-20 w-36",
+              })
             )}
           >
             <div

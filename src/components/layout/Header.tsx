@@ -6,11 +6,7 @@ import {
   Library,
   Menu,
   Search,
-  Film,
-  Tv,
-  BookOpen,
   BookText,
-  Disc3,
   Loader2,
   Plus,
   FileUp,
@@ -33,15 +29,10 @@ import { useAuth } from "@/lib/hooks/useAuth";
 import { useProfiles } from "@/lib/hooks/useEntries";
 import { useOmniSearch } from "@/lib/hooks/useOmniSearch";
 import type { OmniResult } from "@/lib/hooks/useOmniSearch";
-import type { MediaType, EntryStatus } from "@/types";
+import type { EntryStatus } from "@/types";
 import { cn } from "@/lib/utils";
-
-const typeIcons: Record<MediaType, typeof Film> = {
-  movie: Film,
-  tv: Tv,
-  book: BookOpen,
-  record: Disc3,
-};
+import { getMediaSubtitle } from "@/lib/media";
+import { MEDIA_TYPE_ICONS } from "@/components/media/mediaTypeIcons";
 
 const statusColors: Record<EntryStatus, string> = {
   want: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30",
@@ -64,15 +55,10 @@ function SearchResultRow({
   result: OmniResult;
   onClick: () => void;
 }) {
-  const Icon = typeIcons[result.media_type];
+  const Icon = MEDIA_TYPE_ICONS[result.media_type];
   const navigate = useNavigate();
 
-  const subtitle =
-    result.media_type === "record"
-      ? (result.metadata as { artist?: string })?.artist
-      : result.media_type === "book"
-        ? (result.metadata as { authors?: string[] })?.authors?.[0]
-        : undefined;
+  const subtitle = getMediaSubtitle(result, { first: true });
 
   const handleClick = () => {
     if (result.existingMediaId) {
@@ -162,7 +148,7 @@ function OmniSearchBar() {
           setOpen(true);
         }}
         onFocus={() => query.length >= 2 && setOpen(true)}
-        placeholder="Search movies, books, records..."
+        placeholder="Search movies, books, records, games..."
         className="h-8 pl-8 pr-3 text-sm bg-muted/50 border-border/50 focus-visible:bg-background"
       />
       {isLoading && query.length >= 2 && (

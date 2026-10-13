@@ -1,6 +1,6 @@
-import { Film, Tv, BookOpen, Disc3 } from "lucide-react";
 import type { MediaType } from "@/types";
 import { cn } from "@/lib/utils";
+import { MEDIA_TYPE_ICONS } from "@/components/media/mediaTypeIcons";
 
 interface CoverImageProps {
   src: string | null;
@@ -9,20 +9,13 @@ interface CoverImageProps {
   className?: string;
 }
 
-const typeIcons: Record<MediaType, typeof Film> = {
-  movie: Film,
-  tv: Tv,
-  book: BookOpen,
-  record: Disc3,
-};
-
 export function CoverImage({
   src,
   alt,
   mediaType,
   className,
 }: CoverImageProps) {
-  const Icon = typeIcons[mediaType];
+  const Icon = MEDIA_TYPE_ICONS[mediaType];
 
   return (
     <div

@@ -1,5 +1,4 @@
 import { Link } from "react-router-dom";
-import { Film, Tv, BookOpen, Disc3 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -9,8 +8,10 @@ import {
 } from "@/components/ui/tooltip";
 import { RatingStars } from "./RatingStars";
 import { StatusBadge } from "./StatusBadge";
-import type { Media, Entry, Profile, MediaType } from "@/types";
+import type { Media, Entry, Profile } from "@/types";
 import { cn } from "@/lib/utils";
+import { byCoverShape, getMediaSubtitle } from "@/lib/media";
+import { MEDIA_TYPE_ICONS } from "./mediaTypeIcons";
 
 interface MediaCardProps {
   media: Media;
@@ -20,13 +21,6 @@ interface MediaCardProps {
   className?: string;
 }
 
-const typeIcons: Record<MediaType, typeof Film> = {
-  movie: Film,
-  tv: Tv,
-  book: BookOpen,
-  record: Disc3,
-};
-
 export function MediaCard({
   media,
   entry,
@@ -34,13 +28,8 @@ export function MediaCard({
   showUser = false,
   className,
 }: MediaCardProps) {
-  const Icon = typeIcons[media.media_type];
-  const subtitle =
-    media.media_type === "record"
-      ? (media.metadata as { artist?: string })?.artist
-      : media.media_type === "book"
-        ? (media.metadata as { authors?: string[] })?.authors?.join(", ")
-        : undefined;
+  const Icon = MEDIA_TYPE_ICONS[media.media_type];
+  const subtitle = getMediaSubtitle(media);
 
   return (
     <Link to={`/media/${media.id}`} className="block w-full min-w-0">
@@ -54,7 +43,11 @@ export function MediaCard({
           <div
             className={cn(
               "relative shrink-0 overflow-hidden rounded-md bg-muted",
-              media.media_type === "record" ? "h-24 w-24" : "h-28 w-20"
+              byCoverShape(media.media_type, {
+                portrait: "h-28 w-20",
+                square: "h-24 w-24",
+                landscape: "h-20 w-36",
+              })
             )}
           >
             <div

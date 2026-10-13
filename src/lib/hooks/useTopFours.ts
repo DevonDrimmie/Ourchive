@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import type { Media, MediaType } from "@/types";
+import { MEDIA_SELECT, normalizeMedia, type RawMediaRow } from "@/lib/media";
 
 export interface TopFourEntry {
   id: string;
@@ -17,12 +18,14 @@ export function useTopFours(userId: string) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("top_fours")
-        .select("*, media(*)")
+        .select(`*, media(${MEDIA_SELECT})`)
         .eq("user_id", userId)
         .order("slot");
 
       if (error) throw error;
-      return (data ?? []) as TopFourEntry[];
+      return ((data ?? []) as unknown as (Omit<TopFourEntry, "media"> & { media: RawMediaRow | null })[])
+        .filter((row) => row.media != null)
+        .map((row): TopFourEntry => ({ ...row, media: normalizeMedia(row.media!) }));
     },
     enabled: !!userId,
   });

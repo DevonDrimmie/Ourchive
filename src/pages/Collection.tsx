@@ -27,6 +27,7 @@ const typeFilters = [
   { value: "tv", label: "TV", path: "/collection/tv" },
   { value: "book", label: "Books", path: "/collection/books" },
   { value: "record", label: "Records", path: "/collection/records" },
+  { value: "game", label: "Games", path: "/collection/games" },
 ];
 
 const pathToFilter: Record<string, string> = {
@@ -35,6 +36,7 @@ const pathToFilter: Record<string, string> = {
   "/collection/tv": "tv",
   "/collection/books": "book",
   "/collection/records": "record",
+  "/collection/games": "game",
 };
 
 const statusFilters = [

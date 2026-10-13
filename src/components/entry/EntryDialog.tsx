@@ -17,11 +17,18 @@ import {
 } from "@/components/ui/select";
 import { RatingStars } from "@/components/media/RatingStars";
 import { CoverImage } from "@/components/media/CoverImage";
+import { EntryTypeFields } from "@/components/entry/EntryTypeFields";
 import { useCreateEntry } from "@/lib/hooks/useEntries";
-import type { SearchResult, EntryStatus, OwnershipStatus } from "@/types";
+import type { SearchResult, EntryStatus, OwnershipStatus, EntryDetails } from "@/types";
 import { MEDIA_CONFIG, MEDIA_TYPE_VERB, OWNERSHIP_LABELS } from "@/types";
 import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import {
+  EMPTY_ENTRY_DETAILS,
+  byCoverShape,
+  getMediaSubtitle,
+  isEmptyEntryDetails,
+} from "@/lib/media";
 
 interface EntryDialogProps {
   result: SearchResult | null;
@@ -43,6 +50,7 @@ export function EntryDialog({
   const [consumedDate, setConsumedDate] = useState(
     new Date().toISOString().slice(0, 10)
   );
+  const [details, setDetails] = useState<EntryDetails>(EMPTY_ENTRY_DETAILS.movie);
 
   useEffect(() => {
     if (config) {
@@ -52,6 +60,7 @@ export function EntryDialog({
       setReview("");
       setConsumedDate(new Date().toISOString().slice(0, 10));
     }
+    if (result) setDetails(EMPTY_ENTRY_DETAILS[result.media_type]);
   }, [result]);
 
   const createEntry = useCreateEntry();
@@ -66,6 +75,7 @@ export function EntryDialog({
       rating,
       review: review || null,
       consumed_date: consumedDate || null,
+      details: isEmptyEntryDetails(result.media_type, details) ? null : details,
     });
 
     onOpenChange(false);
@@ -73,12 +83,7 @@ export function EntryDialog({
 
   if (!result || !config) return null;
 
-  const subtitle =
-    result.media_type === "record"
-      ? (result.metadata as { artist?: string })?.artist
-      : result.media_type === "book"
-        ? (result.metadata as { authors?: string[] })?.authors?.join(", ")
-        : undefined;
+  const subtitle = getMediaSubtitle(result);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -94,9 +99,11 @@ export function EntryDialog({
             mediaType={result.media_type}
             className={cn(
               "shrink-0",
-              result.media_type === "record"
-                ? "h-24 w-24"
-                : "h-32 w-20"
+              byCoverShape(result.media_type, {
+                portrait: "h-32 w-20",
+                square: "h-24 w-24",
+                landscape: "h-20 w-36",
+              })
             )}
           />
           <div className="min-w-0 flex-1">
@@ -177,6 +184,13 @@ export function EntryDialog({
               </div>
             </div>
           )}
+
+          <EntryTypeFields
+            mediaType={result.media_type}
+            value={details}
+            onChange={setDetails}
+            platformOptions={result.media_type === "game" ? result.details.platforms : []}
+          />
 
           {(!config.showStatus || status === "completed" || status === "dnf") && (
             <>

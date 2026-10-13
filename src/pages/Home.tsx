@@ -16,6 +16,7 @@ const filters = [
   { value: "tv", label: "TV", path: "/tv" },
   { value: "book", label: "Books", path: "/books" },
   { value: "record", label: "Records", path: "/records" },
+  { value: "game", label: "Games", path: "/games" },
 ];
 
 const pathToFilter: Record<string, string> = {
@@ -24,6 +25,7 @@ const pathToFilter: Record<string, string> = {
   "/tv": "tv",
   "/books": "book",
   "/records": "record",
+  "/games": "game",
 };
 
 const typeLabels: Record<MediaType, string> = {
@@ -31,6 +33,23 @@ const typeLabels: Record<MediaType, string> = {
   tv: "show",
   book: "book",
   record: "record",
+  game: "game",
+};
+
+const consumingVerbs: Record<MediaType, string> = {
+  movie: "is watching",
+  tv: "is watching",
+  book: "is reading",
+  record: "is listening to",
+  game: "is playing",
+};
+
+const completedVerbs: Record<MediaType, string> = {
+  movie: "watched",
+  tv: "watched",
+  book: "finished",
+  record: "listened to",
+  game: "played",
 };
 
 function getActionText(entry: Entry, media: Media, profile: Profile): string {
@@ -49,12 +68,7 @@ function getActionText(entry: Entry, media: Media, profile: Profile): string {
     return `${name} did not finish this ${thing}`;
   }
   if (entry.status === "consuming") {
-    const verb =
-      media.media_type === "book"
-        ? "is reading"
-        : media.media_type === "record"
-          ? "is listening to"
-          : "is watching";
+    const verb = consumingVerbs[media.media_type];
     return `${name} ${verb} this ${thing}`;
   }
   if (entry.ownership === "want_to_own") {
@@ -70,12 +84,7 @@ function getActionText(entry: Entry, media: Media, profile: Profile): string {
     return `${name} owns this ${thing}`;
   }
 
-  const verb =
-    media.media_type === "book"
-      ? "finished"
-      : media.media_type === "record"
-        ? "listened to"
-        : "watched";
+  const verb = completedVerbs[media.media_type];
   return `${name} ${verb} this ${thing}`;
 }
 

@@ -159,6 +159,15 @@ function AppRoutes() {
         }
       />
       <Route
+        path="/games"
+        element={
+          <ProtectedRoute>
+            <Header />
+            <HomePage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/search"
         element={
           <ProtectedRoute>
@@ -223,6 +232,15 @@ function AppRoutes() {
       />
       <Route
         path="/collection/records"
+        element={
+          <ProtectedRoute>
+            <Header />
+            <CollectionPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/collection/games"
         element={
           <ProtectedRoute>
             <Header />

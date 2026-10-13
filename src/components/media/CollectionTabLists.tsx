@@ -1,26 +1,24 @@
 import { Link } from "react-router-dom";
-import { Film, Tv, BookOpen, Disc3 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { RatingStars } from "@/components/media/RatingStars";
-import type { Media, MediaType } from "@/types";
+import type { Media } from "@/types";
 import { MEDIA_TYPE_LABELS } from "@/types";
 import { cn } from "@/lib/utils";
+import { byCoverShape } from "@/lib/media";
+import { MEDIA_TYPE_ICONS } from "@/components/media/mediaTypeIcons";
 import type { EntryWithMedia } from "@/components/media/MediaCollectionInsights";
 
-const typeIcons: Record<MediaType, typeof Film> = {
-  movie: Film,
-  tv: Tv,
-  book: BookOpen,
-  record: Disc3,
-};
-
 function CoverThumb({ media }: { media: Media }) {
-  const Icon = typeIcons[media.media_type];
+  const Icon = MEDIA_TYPE_ICONS[media.media_type];
   return (
     <div
       className={cn(
         "relative shrink-0 overflow-hidden rounded-md bg-muted",
-        media.media_type === "record" ? "h-16 w-16" : "h-20 w-14"
+        byCoverShape(media.media_type, {
+          portrait: "h-20 w-14",
+          square: "h-16 w-16",
+          landscape: "h-14 w-24",
+        })
       )}
     >
       {media.cover_url ? (

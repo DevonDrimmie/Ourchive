@@ -26,13 +26,12 @@ import { useProfiles, useCollection } from "@/lib/hooks/useEntries";
 import { useAuth } from "@/lib/hooks/useAuth";
 import { useUpdateProfile } from "@/lib/hooks/useProfile";
 import type { MediaType, Entry, Media } from "@/types";
+import { MEDIA_TYPES } from "@/types";
 import { Loader2, Camera } from "lucide-react";
 import { ProfileMediaTypeNav } from "@/components/profile/ProfileMediaTypeNav";
 
-const mediaTypes: MediaType[] = ["movie", "tv", "book", "record"];
-
 /** Order of Top 4 blocks on profile home */
-const topFourOrder: MediaType[] = ["movie", "book", "record", "tv"];
+const topFourOrder: MediaType[] = ["movie", "book", "record", "tv", "game"];
 
 export function ProfilePage() {
   const { id } = useParams<{ id: string }>();
@@ -73,7 +72,7 @@ export function ProfilePage() {
     .slice(0, 2)
     .toUpperCase();
 
-  const countByType = mediaTypes.reduce(
+  const countByType = MEDIA_TYPES.reduce(
     (acc, type) => {
       acc[type] = (allEntries ?? []).filter(
         (e: Entry & { media: Media }) => e.media?.media_type === type

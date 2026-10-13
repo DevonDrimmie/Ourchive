@@ -11,23 +11,10 @@ import type { OmniResult } from "@/lib/hooks/useOmniSearch";
 import { useCreateEntry } from "@/lib/hooks/useEntries";
 import type { SearchResult } from "@/types";
 import { MEDIA_CONFIG } from "@/types";
-import {
-  Search as SearchIcon,
-  Loader2,
-  Film,
-  Tv,
-  BookOpen,
-  Disc3,
-} from "lucide-react";
-import type { MediaType } from "@/types";
+import { Search as SearchIcon, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-const typeIcons: Record<MediaType, typeof Film> = {
-  movie: Film,
-  tv: Tv,
-  book: BookOpen,
-  record: Disc3,
-};
+import { byCoverShape, getMediaSubtitle } from "@/lib/media";
+import { MEDIA_TYPE_ICONS } from "@/components/media/mediaTypeIcons";
 
 function SearchResultCard({
   result,
@@ -38,14 +25,9 @@ function SearchResultCard({
 }) {
   const config = MEDIA_CONFIG[result.media_type];
   const createEntry = useCreateEntry();
-  const Icon = typeIcons[result.media_type];
+  const Icon = MEDIA_TYPE_ICONS[result.media_type];
 
-  const subtitle =
-    result.media_type === "record"
-      ? (result.metadata as { artist?: string })?.artist
-      : result.media_type === "book"
-        ? (result.metadata as { authors?: string[] })?.authors?.join(", ")
-        : undefined;
+  const subtitle = getMediaSubtitle(result);
 
   const handleSecondary = async () => {
     await createEntry.mutateAsync({
@@ -64,7 +46,11 @@ function SearchResultCard({
           mediaType={result.media_type}
           className={cn(
             "shrink-0",
-            result.media_type === "record" ? "h-14 w-14" : "h-18 w-12"
+            byCoverShape(result.media_type, {
+              portrait: "h-18 w-12",
+              square: "h-14 w-14",
+              landscape: "h-12 w-20",
+            })
           )}
         />
 
@@ -151,7 +137,7 @@ export function SearchPage() {
         <Input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search movies, books, records, TV..."
+          placeholder="Search movies, TV, books, records, games..."
           className="pl-9"
           autoFocus
         />

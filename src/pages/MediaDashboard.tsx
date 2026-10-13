@@ -18,17 +18,17 @@ import { useTopFours } from "@/lib/hooks/useTopFours";
 import { useProfiles, useCollection } from "@/lib/hooks/useEntries";
 import { useAuth } from "@/lib/hooks/useAuth";
 import type { MediaType, Entry, Media } from "@/types";
-import { MEDIA_TYPE_LABELS } from "@/types";
+import {
+  MEDIA_TYPES,
+  MEDIA_TYPE_LABELS,
+  MEDIA_TYPE_PLURAL_LABELS,
+  MEDIA_TYPE_SLUGS,
+} from "@/types";
 import { Loader2, ChevronLeft } from "lucide-react";
 
-const ALL_MEDIA_TYPES: MediaType[] = ["movie", "tv", "book", "record"];
-
-const slugToMediaType: Record<string, MediaType> = {
-  movies: "movie",
-  tv: "tv",
-  books: "book",
-  records: "record",
-};
+const slugToMediaType: Record<string, MediaType> = Object.fromEntries(
+  MEDIA_TYPES.map((t) => [MEDIA_TYPE_SLUGS[t], t])
+);
 
 export function MediaDashboardPage() {
   const { id, type: typeSlug } = useParams<{ id: string; type: string }>();
@@ -80,7 +80,7 @@ export function MediaDashboardPage() {
 
   const emptyLabel = MEDIA_TYPE_LABELS[mediaType].toLowerCase();
 
-  const countByType = ALL_MEDIA_TYPES.reduce(
+  const countByType = MEDIA_TYPES.reduce(
     (acc, type) => {
       acc[type] = (allEntries ?? []).filter(
         (e: Entry & { media: Media }) => e.media?.media_type === type
@@ -137,7 +137,7 @@ export function MediaDashboardPage() {
       />
 
       <div className="mt-4 flex items-baseline gap-2">
-        <h2 className="text-lg font-bold">{MEDIA_TYPE_LABELS[mediaType]}s</h2>
+        <h2 className="text-lg font-bold">{MEDIA_TYPE_PLURAL_LABELS[mediaType]}</h2>
         <span className="text-sm text-muted-foreground">
           {entries.length} in collection
         </span>

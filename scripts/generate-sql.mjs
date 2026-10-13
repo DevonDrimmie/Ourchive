@@ -1,79 +1,16 @@
-import { readFileSync, writeFileSync } from "fs";
-import { resolve, dirname } from "path";
-import { fileURLToPath } from "url";
-
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const root = resolve(__dirname, "..");
-
-const DM_USER = "3caf032e-8303-4cc4-a4e9-5e624afb2266";
-const AB_USER = "74c42906-6efa-4c48-99d0-0b6d2eb01eab";
-
-function parseCSVLine(line) {
-  const fields = [];
-  let current = "";
-  let inQuotes = false;
-  for (let i = 0; i < line.length; i++) {
-    const ch = line[i];
-    if (ch === '"') {
-      if (inQuotes && line[i + 1] === '"') {
-        current += '"';
-        i++;
-      } else {
-        inQuotes = !inQuotes;
-      }
-    } else if (ch === "," && !inQuotes) {
-      fields.push(current.trim());
-      current = "";
-    } else {
-      current += ch;
-    }
-  }
-  fields.push(current.trim());
-  return fields;
-}
-
-function parseCSV(filepath) {
-  const content = readFileSync(filepath, "utf-8");
-  const lines = content.split("\n").filter((l) => l.trim());
-  const headers = parseCSVLine(lines[0]);
-  return lines.slice(1).map((line) => {
-    const vals = parseCSVLine(line);
-    const obj = {};
-    headers.forEach((h, i) => {
-      obj[h.trim()] = vals[i] ?? "";
-    });
-    return obj;
-  });
-}
-
-function parseDateDMY(str) {
-  if (!str) return null;
-  const parts = str.split("/");
-  if (parts.length !== 3) return null;
-  const [d, m, y] = parts;
-  return `${y}-${m.padStart(2, "0")}-${d.padStart(2, "0")}`;
-}
-
-function scaleRating(val) {
-  const n = parseFloat(val);
-  if (isNaN(n) || n <= 0) return null;
-  const scaled = n / 2;
-  return Math.round(scaled * 2) / 2;
-}
-
-function esc(str) {
-  if (str === null || str === undefined) return "NULL";
-  return "'" + String(str).replace(/'/g, "''") + "'";
-}
-
-function sqlArr(arr) {
-  if (!arr || arr.length === 0) return "'{}'";
-  return "ARRAY[" + arr.map((g) => esc(g)).join(",") + "]";
-}
-
-function sqlJson(obj) {
-  return "'" + JSON.stringify(obj).replace(/'/g, "''") + "'::jsonb";
-}
+import { writeFileSync } from "fs";
+import { resolve } from "path";
+import {
+  AB_USER,
+  DM_USER,
+  esc,
+  parseCSV,
+  parseDateDMY,
+  readBookRows,
+  root,
+  scaleRating,
+  sqlArr,
+} from "./lib/tierion.mjs";
 
 let mediaCounter = 0;
 const sql = [];
@@ -82,30 +19,60 @@ sql.push("-- Ourchive backfill generated " + new Date().toISOString());
 sql.push("BEGIN;");
 sql.push("");
 
-function emitMedia(mediaType, title, year, genres, metadata) {
+sql.push("-- Ensure profiles exist for both users");
+sql.push("INSERT INTO profiles (id, display_name) VALUES");
+sql.push(`  (${esc(DM_USER)}, 'DM'),`);
+sql.push(`  (${esc(AB_USER)}, 'AB')`);
+sql.push("ON CONFLICT (id) DO NOTHING;");
+
+/**
+ * Insert a media row and its typed subtype row together.
+ * `subtype` is { table, columns: { col: sqlValue } }.
+ */
+function emitMedia(mediaType, title, year, genres, subtype) {
   mediaCounter++;
-  const varName = `m${mediaCounter}`;
   const yearVal = year && !isNaN(year) ? year : "NULL";
+  const cols = Object.keys(subtype.columns);
+  const vals = Object.values(subtype.columns);
 
   sql.push(`-- ${title}`);
   sql.push(
-    `INSERT INTO media (media_type, title, year, genres, metadata) ` +
-      `VALUES (${esc(mediaType)}, ${esc(title)}, ${yearVal}, ${sqlArr(genres)}, ${sqlJson(metadata)}) ` +
-      `ON CONFLICT DO NOTHING;`
+    `WITH m AS (INSERT INTO media (media_type, title, year, genres) ` +
+      `VALUES (${esc(mediaType)}, ${esc(title)}, ${yearVal}, ${sqlArr(genres)}) RETURNING id) ` +
+      `INSERT INTO ${subtype.table} (media_id${cols.map((c) => ", " + c).join("")}) ` +
+      `SELECT id${vals.map((v) => ", " + v).join("")} FROM m;`
   );
-
-  return { mediaType, title };
 }
 
-function emitEntry(mediaType, title, userId, status, owned, rating, consumedDate) {
+/** SQL selecting the media id for a title, disambiguated by subtype columns when given. */
+function mediaMatch(mediaType, title, subtypeMatch) {
+  const join = subtypeMatch
+    ? ` JOIN ${subtypeMatch.table} s ON s.media_id = m.id AND ${subtypeMatch.where}`
+    : "";
+  return (
+    `FROM media m${join} WHERE m.title = ${esc(title)} AND m.media_type = ${esc(mediaType)} ` +
+    `ORDER BY m.created_at DESC LIMIT 1`
+  );
+}
+
+function emitEntry(match, userId, status, ownership, rating, consumedDate) {
   const ratingVal = rating !== null ? rating : "NULL";
   const dateVal = consumedDate ? esc(consumedDate) : "NULL";
 
   sql.push(
-    `INSERT INTO entries (media_id, user_id, status, owned, rating, consumed_date) ` +
-      `SELECT m.id, ${esc(userId)}, ${esc(status)}, ${owned}, ${ratingVal}, ${dateVal} ` +
-      `FROM media m WHERE m.title = ${esc(title)} AND m.media_type = ${esc(mediaType)} LIMIT 1 ` +
-      `ON CONFLICT (media_id, user_id) DO NOTHING;`
+    `INSERT INTO entries (media_id, user_id, status, ownership, rating, consumed_date) ` +
+      `SELECT m.id, ${esc(userId)}, ${esc(status)}, ${esc(ownership)}, ${ratingVal}, ${dateVal} ` +
+      `${match} ON CONFLICT (media_id, user_id) DO NOTHING;`
+  );
+}
+
+function emitBookEntryDetails(match, userId, format, startedDate) {
+  if (!format && !startedDate) return;
+  sql.push(
+    `INSERT INTO book_entry_details (entry_id, format, started_date) ` +
+      `SELECT e.id, ${esc(format)}, ${startedDate ? esc(startedDate) : "NULL"} ` +
+      `FROM entries e WHERE e.user_id = ${esc(userId)} AND e.media_id = (SELECT m.id ${match}) ` +
+      `ON CONFLICT (entry_id) DO NOTHING;`
   );
 }
 
@@ -120,7 +87,7 @@ function mapMovieStatus(s) {
 function processMovies() {
   sql.push("");
   sql.push("-- ========== MOVIES ==========");
-  const rows = parseCSV(resolve(root, "imports/MyTierion - Movies.csv"));
+  const rows = parseCSV("imports/MyTierion - Movies.csv");
 
   for (const row of rows) {
     const title = (row["Title"] || "").trim().replace(/^"|"$/g, "");
@@ -134,7 +101,11 @@ function processMovies() {
       .filter(Boolean);
     const director = (row["Director"] || "").trim();
 
-    emitMedia("movie", title, year, genres, director ? { director } : {});
+    emitMedia("movie", title, year, genres, {
+      table: "movies",
+      columns: { director: director ? esc(director) : "NULL" },
+    });
+    const match = mediaMatch("movie", title);
 
     const abStatus = (row["Watch Status (AB)"] || "").trim();
     const dmStatus = (row["Watch Status (DM)"] || "").trim();
@@ -144,18 +115,12 @@ function processMovies() {
 
     if (abStatus) {
       const status = mapMovieStatus(abStatus);
-      emitEntry(
-        "movie", title, AB_USER, status, false, abRating,
-        status === "completed" ? watchDate : null
-      );
+      emitEntry(match, AB_USER, status, "none", abRating, status === "completed" ? watchDate : null);
     }
 
     if (dmStatus) {
       const status = mapMovieStatus(dmStatus);
-      emitEntry(
-        "movie", title, DM_USER, status, false, dmRating,
-        status === "completed" ? watchDate : null
-      );
+      emitEntry(match, DM_USER, status, "none", dmRating, status === "completed" ? watchDate : null);
     }
     sql.push("");
   }
@@ -164,7 +129,7 @@ function processMovies() {
 function processRecords() {
   sql.push("");
   sql.push("-- ========== RECORDS ==========");
-  const rows = parseCSV(resolve(root, "imports/MyTierion - Records.csv"));
+  const rows = parseCSV("imports/MyTierion - Records.csv");
 
   for (const row of rows) {
     const album = (row["Album"] || "").trim();
@@ -179,80 +144,55 @@ function processRecords() {
       .filter(Boolean);
     const status = (row["Status"] || "").trim();
 
-    emitMedia("record", album, year, genres, { artist });
+    emitMedia("record", album, year, genres, {
+      table: "records",
+      columns: { artist: esc(artist) },
+    });
+    const match = mediaMatch("record", album, {
+      table: "records",
+      where: `s.artist = ${esc(artist)}`,
+    });
 
     if (status.startsWith("Owned DM")) {
-      emitEntry("record", album, DM_USER, "completed", true, null, null);
+      emitEntry(match, DM_USER, "completed", "physical", null, null);
     } else if (status.startsWith("Owned AB")) {
-      emitEntry("record", album, AB_USER, "completed", true, null, null);
+      emitEntry(match, AB_USER, "completed", "physical", null, null);
     } else if (status === "Want") {
-      emitEntry("record", album, DM_USER, "want", false, null, null);
-      emitEntry("record", album, AB_USER, "want", false, null, null);
+      emitEntry(match, DM_USER, "want", "want_to_own", null, null);
+      emitEntry(match, AB_USER, "want", "want_to_own", null, null);
     }
     sql.push("");
   }
 }
 
-function processBooks(filepath, userId, label) {
-  sql.push("");
-  sql.push(`-- ========== ${label} BOOKS ==========`);
-  const rows = parseCSV(filepath);
-
-  for (const row of rows) {
-    const title = (row["Title"] || "").trim();
-    if (!title) continue;
-
-    const author = (row["Author"] || "").trim();
-    const yearStr = (row["Year"] || "").trim();
-    const year = yearStr ? parseInt(yearStr) : null;
-    const csvStatus = (row["Status"] || "").trim();
-    const ratingStr = (row["Rating"] || "0").trim();
-    const startDate = parseDateDMY((row["Start Date"] || "").trim());
-    const endDate = parseDateDMY((row["End Date"] || "").trim());
-    const genre = (row["Literary Genre"] || "").trim();
-
-    if (!csvStatus) continue;
-
-    const genres = genre
-      ? genre.split("/").map((g) => g.trim()).filter(Boolean)
-      : [];
-
-    emitMedia("book", title, year, genres, author ? { authors: [author] } : {});
-
-    const lowerStatus = csvStatus.toLowerCase();
-    let status, owned;
-
-    if (lowerStatus === "read") {
-      status = "completed";
-      owned = false;
-    } else if (lowerStatus === "want to read") {
-      status = "want";
-      owned = false;
-    } else if (lowerStatus === "physical tbr") {
-      status = "want";
-      owned = true;
-    } else if (lowerStatus.startsWith("currently reading")) {
-      status = "consuming";
-      owned = lowerStatus.includes("kobo") ? false : true;
-    } else {
-      status = "want";
-      owned = false;
+function processBooks() {
+  let currentLabel = null;
+  for (const b of readBookRows()) {
+    if (b.label !== currentLabel) {
+      currentLabel = b.label;
+      sql.push("");
+      sql.push(`-- ========== ${b.label} BOOKS ==========`);
     }
 
-    const rating = scaleRating(ratingStr);
-
-    emitEntry(
-      "book", title, userId, status, owned, rating,
-      endDate || startDate || null
+    emitMedia("book", b.title, b.year, b.genres, {
+      table: "books",
+      columns: { authors: sqlArr(b.author ? [b.author] : []) },
+    });
+    const match = mediaMatch(
+      "book",
+      b.title,
+      b.author ? { table: "books", where: `s.authors = ${sqlArr([b.author])}` } : undefined
     );
+
+    emitEntry(match, b.userId, b.status, b.ownership, b.rating, b.endDate || b.startDate || null);
+    emitBookEntryDetails(match, b.userId, b.format, b.startDate);
     sql.push("");
   }
 }
 
 processMovies();
 processRecords();
-processBooks(resolve(root, "imports/MyTierion - AB Books.csv"), AB_USER, "AB");
-processBooks(resolve(root, "imports/MyTierion - DM Books.csv"), DM_USER, "DM");
+processBooks();
 
 sql.push("");
 sql.push("COMMIT;");

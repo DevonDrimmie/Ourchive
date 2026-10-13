@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Film, Tv, BookOpen, Disc3, Plus, X, Loader2 } from "lucide-react";
+import { Plus, X, Loader2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -8,7 +8,6 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { supabase } from "@/lib/supabase";
 import {
   useSetTopFour,
   useRemoveTopFour,
@@ -16,8 +15,11 @@ import {
 } from "@/lib/hooks/useTopFours";
 import type { TopFourEntry } from "@/lib/hooks/useTopFours";
 import type { MediaType, SearchResult } from "@/types";
-import { MEDIA_TYPE_LABELS } from "@/types";
+import { MEDIA_TYPE_LABELS, MEDIA_TYPE_PLURAL_LABELS } from "@/types";
 import { cn } from "@/lib/utils";
+import { upsertMedia } from "@/lib/hooks/useEntries";
+import { byCoverShape, getMediaSubtitle } from "@/lib/media";
+import { MEDIA_TYPE_ICONS } from "@/components/media/mediaTypeIcons";
 import { useSearch } from "@/lib/hooks/useSearch";
 import { Link } from "react-router-dom";
 import {
@@ -45,44 +47,6 @@ interface TopFourGridProps {
   editable: boolean;
 }
 
-const typeIcons: Record<MediaType, typeof Film> = {
-  movie: Film,
-  tv: Tv,
-  book: BookOpen,
-  record: Disc3,
-};
-
-async function upsertMedia(result: SearchResult): Promise<string> {
-  if (result.external_id && result.external_source) {
-    const { data: existing } = await supabase
-      .from("media")
-      .select("id")
-      .eq("external_id", result.external_id)
-      .eq("external_source", result.external_source)
-      .single();
-
-    if (existing) return existing.id;
-  }
-
-  const { data, error } = await supabase
-    .from("media")
-    .insert({
-      media_type: result.media_type,
-      title: result.title,
-      year: result.year,
-      cover_url: result.cover_url,
-      genres: result.genres,
-      external_id: result.external_id,
-      external_source: result.external_source,
-      metadata: result.metadata,
-    })
-    .select("id")
-    .single();
-
-  if (error) throw error;
-  return data.id;
-}
-
 function SortableTile({
   entry,
   mediaType,
@@ -94,7 +58,7 @@ function SortableTile({
   mediaType: MediaType;
   editable: boolean;
   onRemove: () => void;
-  Icon: typeof Film;
+  Icon: (typeof MEDIA_TYPE_ICONS)[MediaType];
 }) {
   const {
     attributes,
@@ -133,7 +97,11 @@ function SortableTile({
         draggable={false}
         className={cn(
           "block overflow-hidden rounded-lg bg-muted ring-2 ring-transparent transition-shadow",
-          mediaType === "record" ? "aspect-square" : "aspect-[2/3]",
+          byCoverShape(mediaType, {
+            portrait: "aspect-[2/3]",
+            square: "aspect-square",
+            landscape: "aspect-video",
+          }),
           isDragging && "ring-primary/60 shadow-lg",
           editable && "cursor-grab active:cursor-grabbing"
         )}
@@ -197,7 +165,7 @@ export function TopFourGrid({
   userId,
   editable,
 }: TopFourGridProps) {
-  const Icon = typeIcons[mediaType];
+  const Icon = MEDIA_TYPE_ICONS[mediaType];
   const setTopFour = useSetTopFour();
   const removeTopFour = useRemoveTopFour();
   const reorderTopFours = useReorderTopFours();
@@ -300,7 +268,7 @@ export function TopFourGrid({
   return (
     <div>
       <h3 className="text-sm font-semibold text-muted-foreground mb-2">
-        Top {MEDIA_TYPE_LABELS[mediaType]}s
+        Top {MEDIA_TYPE_PLURAL_LABELS[mediaType]}
       </h3>
       <DndContext
         sensors={sensors}
@@ -333,9 +301,11 @@ export function TopFourGrid({
                   disabled={!editable}
                   className={cn(
                     "w-full overflow-hidden rounded-lg bg-muted/50 border border-dashed border-border",
-                    mediaType === "record"
-                      ? "aspect-square"
-                      : "aspect-[2/3]",
+                    byCoverShape(mediaType, {
+                      portrait: "aspect-[2/3]",
+                      square: "aspect-square",
+                      landscape: "aspect-video",
+                    }),
                     editable &&
                       "hover:border-primary/50 hover:bg-muted cursor-pointer transition-colors"
                   )}
@@ -371,7 +341,7 @@ export function TopFourGrid({
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder={`Search ${MEDIA_TYPE_LABELS[mediaType].toLowerCase()}s...`}
+            placeholder={`Search ${MEDIA_TYPE_PLURAL_LABELS[mediaType].toLowerCase()}...`}
             autoFocus
           />
 
@@ -383,14 +353,7 @@ export function TopFourGrid({
             ) : searchResults && searchResults.length > 0 ? (
               <div className="space-y-1">
                 {searchResults.map((r) => {
-                  const subtitle =
-                    r.media_type === "record"
-                      ? (r.metadata as { artist?: string })?.artist
-                      : r.media_type === "book"
-                        ? (r.metadata as { authors?: string[] })?.authors?.join(
-                            ", "
-                          )
-                        : undefined;
+                  const subtitle = getMediaSubtitle(r);
 
                   return (
                     <button
@@ -402,9 +365,11 @@ export function TopFourGrid({
                       <div
                         className={cn(
                           "shrink-0 overflow-hidden rounded bg-muted",
-                          r.media_type === "record"
-                            ? "h-10 w-10"
-                            : "h-12 w-8"
+                          byCoverShape(r.media_type, {
+                            portrait: "h-12 w-8",
+                            square: "h-10 w-10",
+                            landscape: "h-9 w-16",
+                          })
                         )}
                       >
                         {r.cover_url ? (
