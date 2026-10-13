@@ -70,7 +70,6 @@ export function MediaDetailPage() {
             byCoverShape(media.media_type, {
               portrait: "h-72 w-48",
               square: "h-64 w-64",
-              landscape: "h-44 w-full max-w-sm sm:w-80",
             })
           )}
         />

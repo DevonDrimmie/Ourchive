@@ -12,7 +12,6 @@ import type {
   SearchResult,
 } from "@/types";
 import { shouldBumpFeedEvent } from "@/lib/feedBump";
-import { enrichGame } from "@/lib/api/rawg";
 import {
   ENTRY_DETAILS_SELECT,
   ENTRY_DETAIL_TABLES,
@@ -27,12 +26,7 @@ import { useAuth } from "./useAuth";
 
 /** Find-or-create the media row and its typed subtype row; returns media id. */
 export async function upsertMedia(result: SearchResult): Promise<string> {
-  const toSave =
-    result.media_type === "game"
-      ? await enrichGame(result).catch(() => result)
-      : result;
-
-  const { data, error } = await supabase.rpc("upsert_media", toUpsertMediaArgs(toSave));
+  const { data, error } = await supabase.rpc("upsert_media", toUpsertMediaArgs(result));
   if (error) throw error;
   return data as string;
 }

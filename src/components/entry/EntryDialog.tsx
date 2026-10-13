@@ -102,7 +102,6 @@ export function EntryDialog({
               byCoverShape(result.media_type, {
                 portrait: "h-32 w-20",
                 square: "h-24 w-24",
-                landscape: "h-20 w-36",
               })
             )}
           />

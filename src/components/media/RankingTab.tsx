@@ -67,7 +67,6 @@ function CoverThumb({ media }: { media: Media }) {
         byCoverShape(media.media_type, {
           portrait: "h-16 w-12",
           square: "h-14 w-14",
-          landscape: "h-12 w-20",
         })
       )}
     >

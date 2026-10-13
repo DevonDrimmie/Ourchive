@@ -175,7 +175,6 @@ export function EditEntryDialog({
                       byCoverShape(media.media_type, {
                         portrait: "h-20 w-14",
                         square: "h-16 w-16",
-                        landscape: "h-14 w-24",
                       })
                     )}
                   />
@@ -253,7 +252,6 @@ export function EditEntryDialog({
                                   byCoverShape(hit.media_type, {
                                     portrait: "h-12 w-8",
                                     square: "h-10 w-10",
-                                    landscape: "h-9 w-16",
                                   })
                                 )}
                               />

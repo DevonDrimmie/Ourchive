@@ -100,7 +100,6 @@ function SortableTile({
           byCoverShape(mediaType, {
             portrait: "aspect-[2/3]",
             square: "aspect-square",
-            landscape: "aspect-video",
           }),
           isDragging && "ring-primary/60 shadow-lg",
           editable && "cursor-grab active:cursor-grabbing"
@@ -304,7 +303,6 @@ export function TopFourGrid({
                     byCoverShape(mediaType, {
                       portrait: "aspect-[2/3]",
                       square: "aspect-square",
-                      landscape: "aspect-video",
                     }),
                     editable &&
                       "hover:border-primary/50 hover:bg-muted cursor-pointer transition-colors"
@@ -368,7 +366,6 @@ export function TopFourGrid({
                           byCoverShape(r.media_type, {
                             portrait: "h-12 w-8",
                             square: "h-10 w-10",
-                            landscape: "h-9 w-16",
                           })
                         )}
                       >

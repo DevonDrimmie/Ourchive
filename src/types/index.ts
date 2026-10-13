@@ -181,13 +181,13 @@ export const MEDIA_TYPE_SLUGS: Record<MediaType, string> = {
   game: "games",
 };
 
-/** Cover art proportions per type: posters, album squares, landscape game art */
-export const COVER_SHAPE: Record<MediaType, "portrait" | "square" | "landscape"> = {
+/** Cover art proportions per type: posters and box art, or album squares */
+export const COVER_SHAPE: Record<MediaType, "portrait" | "square"> = {
   movie: "portrait",
   tv: "portrait",
   book: "portrait",
   record: "square",
-  game: "landscape",
+  game: "portrait",
 };
 
 export const STATUS_LABELS: Record<EntryStatus, string> = {

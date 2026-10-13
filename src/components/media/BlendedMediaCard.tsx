@@ -269,7 +269,6 @@ export function BlendedMediaCard({
               byCoverShape(media.media_type, {
                 portrait: "h-28 w-20",
                 square: "h-24 w-24",
-                landscape: "h-20 w-36",
               })
             )}
           >

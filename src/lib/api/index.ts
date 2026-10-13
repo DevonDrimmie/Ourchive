@@ -2,7 +2,7 @@ import type { MediaType, SearchResult } from "@/types";
 import { searchMovies, searchTv } from "./tmdb";
 import { searchBooks } from "./openlib";
 import { searchRecords } from "./musicbrainz";
-import { searchGames } from "./rawg";
+import { searchGames } from "./igdb";
 
 export function searchByType(
   query: string,

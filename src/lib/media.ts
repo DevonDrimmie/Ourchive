@@ -125,7 +125,7 @@ export function normalizeEntry<T extends Entry = Entry>(row: Record<string, unkn
 /** Pick a value (usually cover size classes) by the type's cover proportions. */
 export function byCoverShape<T>(
   mediaType: MediaType,
-  values: { portrait: T; square: T; landscape: T }
+  values: { portrait: T; square: T }
 ): T {
   return values[COVER_SHAPE[mediaType]];
 }
@@ -146,7 +146,7 @@ export function toUpsertMediaArgs(result: SearchResult) {
   };
 }
 
-/** Secondary line under a title: artist, authors, or developers (platforms before a game is enriched). */
+/** Secondary line under a title: artist, authors, or developers (falling back to platforms). */
 export function getMediaSubtitle(
   media: Media | SearchResult,
   options: { first?: boolean } = {}
