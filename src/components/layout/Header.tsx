@@ -92,7 +92,7 @@ function HeaderSearch({
     <div
       ref={containerRef}
       className={cn(
-        "relative ml-auto min-w-0 transition-[width] duration-300 ease-out",
+        "relative ml-auto flex min-w-0 justify-end transition-[width] duration-300 ease-out",
         open ? "w-full max-w-md" : "w-8"
       )}
     >
