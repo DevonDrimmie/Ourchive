@@ -205,11 +205,11 @@ Vite environment variables and publishes to GitHub Pages, served from `ourchive.
 
 ## Status and roadmap
 
-Live and in daily use by its intended audience. Currently ships **films, TV, books, and
-records**; the schema, routing, and UI config are structured so a new type is additive
+Live and in daily use by its intended audience. Currently ships **films, books, records,
+and games**; the schema, routing, and UI config are structured so a new type is additive
 rather than a refactor.
 
-- [ ] **Video games** via the IGDB API — the next media type
+- [x] **Video games** via the IGDB API
 - [ ] Podcasts and comics
 - [ ] Goodreads and Discogs importers, matching the Letterboxd one
 - [ ] Comments and reactions on entries

@@ -13,7 +13,6 @@ import {
 
 export const MEDIA_DETAIL_TABLES: Record<MediaType, string> = {
   movie: "movies",
-  tv: "tv_shows",
   book: "books",
   record: "records",
   game: "games",
@@ -21,7 +20,6 @@ export const MEDIA_DETAIL_TABLES: Record<MediaType, string> = {
 
 export const ENTRY_DETAIL_TABLES: Record<MediaType, string> = {
   movie: "movie_entry_details",
-  tv: "tv_entry_details",
   book: "book_entry_details",
   record: "record_entry_details",
   game: "game_entry_details",
@@ -46,7 +44,6 @@ export function entrySelect(options: { innerMedia?: boolean } = {}): string {
 
 const EMPTY_MEDIA_DETAILS: MediaDetailsByType = {
   movie: { director: null, overview: null, runtime_minutes: null },
-  tv: { creators: [], overview: null, season_count: null, episode_count: null },
   book: { authors: [], isbn: null, pages: null, publisher: null },
   record: { artist: "Unknown Artist", release_type: null, label: null, track_count: null },
   game: { platforms: [], developers: [], publishers: [], overview: null },
@@ -54,7 +51,6 @@ const EMPTY_MEDIA_DETAILS: MediaDetailsByType = {
 
 export const EMPTY_ENTRY_DETAILS: EntryDetailsByType = {
   movie: { rewatch_count: 0 },
-  tv: { current_season: null, current_episode: null },
   book: { format: null, started_date: null, pages_read: null },
   record: { format: null },
   game: { platform: null, hours_played: null },
@@ -161,7 +157,6 @@ export function getMediaSubtitle(
     case "game":
       return join(media.details.developers) ?? (media.details.platforms.slice(0, 3).join(", ") || undefined);
     case "movie":
-    case "tv":
       return undefined;
   }
 }
@@ -169,7 +164,6 @@ export function getMediaSubtitle(
 export function getMediaOverview(media: Media | SearchResult): string | undefined {
   switch (media.media_type) {
     case "movie":
-    case "tv":
     case "game":
       return media.details.overview ?? undefined;
     case "book":

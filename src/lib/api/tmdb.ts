@@ -13,27 +13,11 @@ interface TmdbMovie {
   overview?: string;
 }
 
-interface TmdbTv {
-  id: number;
-  name: string;
-  first_air_date?: string;
-  poster_path?: string;
-  genre_ids?: number[];
-  overview?: string;
-}
-
 const MOVIE_GENRES: Record<number, string> = {
   28: "Action", 12: "Adventure", 16: "Animation", 35: "Comedy", 80: "Crime",
   99: "Documentary", 18: "Drama", 10751: "Family", 14: "Fantasy", 36: "History",
   27: "Horror", 10402: "Music", 9648: "Mystery", 10749: "Romance",
   878: "Sci-Fi", 10770: "TV Movie", 53: "Thriller", 10752: "War", 37: "Western",
-};
-
-const TV_GENRES: Record<number, string> = {
-  10759: "Action & Adventure", 16: "Animation", 35: "Comedy", 80: "Crime",
-  99: "Documentary", 18: "Drama", 10751: "Family", 10762: "Kids",
-  9648: "Mystery", 10763: "News", 10764: "Reality", 10765: "Sci-Fi & Fantasy",
-  10766: "Soap", 10767: "Talk", 10768: "War & Politics", 37: "Western",
 };
 
 export async function searchMovies(query: string): Promise<SearchResult[]> {
@@ -58,34 +42,6 @@ export async function searchMovies(query: string): Promise<SearchResult[]> {
         director: null,
         overview: m.overview || null,
         runtime_minutes: null,
-      },
-    })
-  );
-}
-
-export async function searchTv(query: string): Promise<SearchResult[]> {
-  if (!API_KEY) return [];
-  const res = await fetch(
-    `${BASE_URL}/search/tv?api_key=${API_KEY}&query=${encodeURIComponent(query)}&page=1`
-  );
-  const data = await res.json();
-
-  return (data.results ?? []).slice(0, 10).map(
-    (t: TmdbTv): SearchResult => ({
-      external_id: String(t.id),
-      external_source: "tmdb_tv",
-      media_type: "tv",
-      title: t.name,
-      year: t.first_air_date ? parseInt(t.first_air_date.slice(0, 4)) : null,
-      cover_url: t.poster_path ? `${IMG_BASE}${t.poster_path}` : null,
-      genres: (t.genre_ids ?? [])
-        .map((id) => TV_GENRES[id])
-        .filter(Boolean) as string[],
-      details: {
-        creators: [],
-        overview: t.overview || null,
-        season_count: null,
-        episode_count: null,
       },
     })
   );

@@ -19,10 +19,7 @@ import { MEDIA_TYPE_ICONS } from "@/components/media/mediaTypeIcons";
 
 const typeTabs: { value: MediaType | "all"; label: string }[] = [
   { value: "all", label: "All" },
-  ...MEDIA_TYPES.map((t) => ({
-    value: t,
-    label: t === "tv" ? "TV" : MEDIA_TYPE_PLURAL_LABELS[t],
-  })),
+  ...MEDIA_TYPES.map((t) => ({ value: t, label: MEDIA_TYPE_PLURAL_LABELS[t] })),
 ];
 
 function isTypeTab(value: string | null): value is MediaType | "all" {
@@ -168,7 +165,7 @@ export function SearchPage() {
         <Input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search movies, TV, books, records, games..."
+          placeholder="Search movies, books, records, games..."
           className="pl-9"
           autoFocus
         />

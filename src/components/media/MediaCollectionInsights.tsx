@@ -392,7 +392,7 @@ function OwnershipChart({ entries }: { entries: EntryWithMedia[] }) {
         : e.ownership === "digital"
           ? "Digital"
           : e.ownership === "want_to_own"
-            ? "Want to Own"
+            ? "Wishlist"
             : "Don't Own";
     ownershipCounts[label] = (ownershipCounts[label] ?? 0) + 1;
   });

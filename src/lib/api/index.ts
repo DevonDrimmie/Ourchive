@@ -1,5 +1,5 @@
 import type { MediaType, SearchResult } from "@/types";
-import { searchMovies, searchTv } from "./tmdb";
+import { searchMovies } from "./tmdb";
 import { searchBooks } from "./openlib";
 import { searchRecords } from "./musicbrainz";
 import { searchGames } from "./igdb";
@@ -11,8 +11,6 @@ export function searchByType(
   switch (mediaType) {
     case "movie":
       return searchMovies(query);
-    case "tv":
-      return searchTv(query);
     case "book":
       return searchBooks(query);
     case "record":

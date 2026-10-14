@@ -15,11 +15,26 @@ const statusColors: Record<EntryStatus, string> = {
 };
 
 const statusLabels: Record<EntryStatus, string> = {
-  want: "Want",
+  want: "Backlog",
   consuming: "In Progress",
   completed: "Done",
   dnf: "DNF",
 };
+
+/** Records only track ownership, so their badge reflects Wishlist/Owned rather than status. */
+function badgeFor(
+  mediaType: OmniResult["media_type"],
+  s: NonNullable<OmniResult["userStatuses"]>[number]
+): { label: string; className: string } {
+  if (mediaType === "record") {
+    if (s.ownership === "want_to_own") return { label: "Wishlist", className: statusColors.want };
+    if (s.ownership === "physical" || s.ownership === "digital") {
+      return { label: "Owned", className: statusColors.completed };
+    }
+    return { label: "Logged", className: statusColors.consuming };
+  }
+  return { label: statusLabels[s.status], className: statusColors[s.status] };
+}
 
 export function OmniResultRow({
   result,
@@ -70,19 +85,24 @@ export function OmniResultRow({
 
       <div className="hidden shrink-0 items-center gap-1 sm:flex">
         {result.userStatuses && result.userStatuses.length > 0 ? (
-          result.userStatuses.map((s) => (
-            <Badge
-              key={s.userId}
-              variant="outline"
-              className={cn(
-                "h-5 gap-0.5 whitespace-nowrap px-1.5 py-0 text-[10px]",
-                statusColors[s.status]
-              )}
-            >
-              {s.displayName?.split(" ")[0]}: {statusLabels[s.status]}
-              {(s.ownership === "physical" || s.ownership === "digital") && " ✦"}
-            </Badge>
-          ))
+          result.userStatuses.map((s) => {
+            const badge = badgeFor(result.media_type, s);
+            return (
+              <Badge
+                key={s.userId}
+                variant="outline"
+                className={cn(
+                  "h-5 gap-0.5 whitespace-nowrap px-1.5 py-0 text-[10px]",
+                  badge.className
+                )}
+              >
+                {s.displayName?.split(" ")[0]}: {badge.label}
+                {result.media_type !== "record" &&
+                  (s.ownership === "physical" || s.ownership === "digital") &&
+                  " ✦"}
+              </Badge>
+            );
+          })
         ) : (
           <Plus className="h-3.5 w-3.5 text-muted-foreground/40" />
         )}

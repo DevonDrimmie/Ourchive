@@ -2,7 +2,7 @@ import type { EntryStatus, OwnershipStatus } from "@/types";
 
 /**
  * Returns true when a status/ownership change should move this entry to the top
- * of the home feed (wishlist → watching/finished, or want-to-own → physically owned).
+ * of the home feed (backlog → in progress/finished, or wishlist → owned).
  */
 export function shouldBumpFeedEvent(
   prev: { status: EntryStatus; ownership: OwnershipStatus },

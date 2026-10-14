@@ -9,7 +9,6 @@ import {
   type MediaType,
   type MovieEntryDetails,
   type RecordEntryDetails,
-  type TvEntryDetails,
 } from "@/types";
 import { getMediaOverview } from "@/lib/media";
 
@@ -22,12 +21,6 @@ function mediaFacts(media: Media): Fact[] {
       return [
         ["Director", media.details.director],
         ["Runtime", media.details.runtime_minutes && `${media.details.runtime_minutes} min`],
-      ];
-    case "tv":
-      return [
-        ["Created by", list(media.details.creators)],
-        ["Seasons", media.details.season_count],
-        ["Episodes", media.details.episode_count],
       ];
     case "book":
       return [
@@ -85,14 +78,6 @@ function entryDetailParts(mediaType: MediaType, details: EntryDetails): string[]
       return d.rewatch_count > 0
         ? [`Rewatched ${d.rewatch_count}×`]
         : [];
-    }
-    case "tv": {
-      const d = details as TvEntryDetails;
-      const parts = [
-        d.current_season != null && `S${d.current_season}`,
-        d.current_episode != null && `E${d.current_episode}`,
-      ].filter(Boolean);
-      return parts.length ? [parts.join(" ")] : [];
     }
     case "book": {
       const d = details as BookEntryDetails;

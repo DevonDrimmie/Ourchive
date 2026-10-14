@@ -156,7 +156,8 @@ export function MediaDashboardPage() {
         <TabsList className="w-full justify-start">
           <TabsTrigger value="stats">Stats</TabsTrigger>
           <TabsTrigger value="reviews">Reviews</TabsTrigger>
-          <TabsTrigger value="wanted">Wanted</TabsTrigger>
+          {mediaType !== "record" && <TabsTrigger value="backlog">Backlog</TabsTrigger>}
+          <TabsTrigger value="wishlist">Wishlist</TabsTrigger>
           <TabsTrigger value="ranking">Ranking</TabsTrigger>
         </TabsList>
 
@@ -168,8 +169,14 @@ export function MediaDashboardPage() {
           <CollectionReviewsList entries={entries} />
         </TabsContent>
 
-        <TabsContent value="wanted" className="mt-4">
-          <CollectionWantList entries={entries} />
+        {mediaType !== "record" && (
+          <TabsContent value="backlog" className="mt-4">
+            <CollectionWantList entries={entries} kind="backlog" />
+          </TabsContent>
+        )}
+
+        <TabsContent value="wishlist" className="mt-4">
+          <CollectionWantList entries={entries} kind="wishlist" />
         </TabsContent>
 
         <TabsContent value="ranking" className="mt-4">

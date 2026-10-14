@@ -26,5 +26,5 @@ where metadata ? 'pages' and metadata ->> 'pages' !~ '^\d+$';
 
 -- Media types the new schema doesn't know about (007 would fail its check constraint)
 select media_type, count(*) from media
-where media_type not in ('movie', 'tv', 'book', 'record', 'game')
+where media_type not in ('movie', 'book', 'record', 'game')
 group by 1;

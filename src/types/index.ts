@@ -1,6 +1,6 @@
-export type MediaType = "movie" | "tv" | "book" | "record" | "game";
+export type MediaType = "movie" | "book" | "record" | "game";
 
-export const MEDIA_TYPES: MediaType[] = ["movie", "tv", "book", "record", "game"];
+export const MEDIA_TYPES: MediaType[] = ["movie", "book", "record", "game"];
 
 export type EntryStatus = "want" | "consuming" | "completed" | "dnf";
 
@@ -18,13 +18,6 @@ export interface MovieDetails {
   director: string | null;
   overview: string | null;
   runtime_minutes: number | null;
-}
-
-export interface TvDetails {
-  creators: string[];
-  overview: string | null;
-  season_count: number | null;
-  episode_count: number | null;
 }
 
 export interface BookDetails {
@@ -50,7 +43,6 @@ export interface GameDetails {
 
 export interface MediaDetailsByType {
   movie: MovieDetails;
-  tv: TvDetails;
   book: BookDetails;
   record: RecordDetails;
   game: GameDetails;
@@ -96,11 +88,6 @@ export interface MovieEntryDetails {
   rewatch_count: number;
 }
 
-export interface TvEntryDetails {
-  current_season: number | null;
-  current_episode: number | null;
-}
-
 export interface BookEntryDetails {
   format: BookFormat | null;
   started_date: string | null;
@@ -118,7 +105,6 @@ export interface GameEntryDetails {
 
 export interface EntryDetailsByType {
   movie: MovieEntryDetails;
-  tv: TvEntryDetails;
   book: BookEntryDetails;
   record: RecordEntryDetails;
   game: GameEntryDetails;
@@ -158,7 +144,6 @@ export interface EntryFull extends Entry {
 
 export const MEDIA_TYPE_LABELS: Record<MediaType, string> = {
   movie: "Movie",
-  tv: "TV Show",
   book: "Book",
   record: "Record",
   game: "Game",
@@ -166,7 +151,6 @@ export const MEDIA_TYPE_LABELS: Record<MediaType, string> = {
 
 export const MEDIA_TYPE_PLURAL_LABELS: Record<MediaType, string> = {
   movie: "Movies",
-  tv: "TV Shows",
   book: "Books",
   record: "Records",
   game: "Games",
@@ -175,7 +159,6 @@ export const MEDIA_TYPE_PLURAL_LABELS: Record<MediaType, string> = {
 /** URL segment for each type, e.g. /collection/games */
 export const MEDIA_TYPE_SLUGS: Record<MediaType, string> = {
   movie: "movies",
-  tv: "tv",
   book: "books",
   record: "records",
   game: "games",
@@ -184,14 +167,14 @@ export const MEDIA_TYPE_SLUGS: Record<MediaType, string> = {
 /** Cover art proportions per type: posters and box art, or album squares */
 export const COVER_SHAPE: Record<MediaType, "portrait" | "square"> = {
   movie: "portrait",
-  tv: "portrait",
   book: "portrait",
   record: "square",
   game: "portrait",
 };
 
+/** "want" is Backlog (want to consume); wanting to own is the "want_to_own" Wishlist ownership. */
 export const STATUS_LABELS: Record<EntryStatus, string> = {
-  want: "Want",
+  want: "Backlog",
   consuming: "In Progress",
   completed: "Completed",
   dnf: "DNF",
@@ -199,17 +182,16 @@ export const STATUS_LABELS: Record<EntryStatus, string> = {
 
 export const OWNERSHIP_LABELS: Record<OwnershipStatus, string> = {
   none: "Don't own",
-  want_to_own: "Want to own",
+  want_to_own: "Wishlist",
   physical: "Own (Physical)",
   digital: "Own (Digital)",
 };
 
 export const MEDIA_TYPE_VERB: Record<MediaType, Record<EntryStatus, string>> = {
-  movie: { want: "Want to watch", consuming: "Watching", completed: "Watched", dnf: "Did not finish" },
-  tv: { want: "Want to watch", consuming: "Watching", completed: "Watched", dnf: "Did not finish" },
-  book: { want: "Want to read", consuming: "Reading", completed: "Read", dnf: "Did not finish" },
-  record: { want: "Want to listen", consuming: "Listening", completed: "Listened", dnf: "Did not finish" },
-  game: { want: "Want to play", consuming: "Playing", completed: "Played", dnf: "Did not finish" },
+  movie: { want: "Backlog", consuming: "Watching", completed: "Watched", dnf: "Did not finish" },
+  book: { want: "Backlog", consuming: "Reading", completed: "Read", dnf: "Did not finish" },
+  record: { want: "Backlog", consuming: "Listening", completed: "Listened", dnf: "Did not finish" },
+  game: { want: "Backlog", consuming: "Playing", completed: "Played", dnf: "Did not finish" },
 };
 
 export const BOOK_FORMAT_LABELS: Record<BookFormat, string> = {
@@ -247,17 +229,7 @@ export const MEDIA_CONFIG: Record<MediaType, MediaTypeConfig> = {
     showStatus: true,
     showOwnership: true,
     primaryCta: { label: "Log", status: "completed", ownership: "none" },
-    secondaryCta: { label: "Want to watch", status: "want", ownership: "none" },
-  },
-  tv: {
-    statusOptions: ["want", "consuming", "completed", "dnf"],
-    ownershipOptions: ["none", "want_to_own", "physical", "digital"],
-    defaultStatus: "want",
-    defaultOwnership: "none",
-    showStatus: true,
-    showOwnership: true,
-    primaryCta: { label: "Log", status: "completed", ownership: "none" },
-    secondaryCta: { label: "Want to watch", status: "want", ownership: "none" },
+    secondaryCta: { label: "Backlog", status: "want", ownership: "none" },
   },
   book: {
     statusOptions: ["want", "consuming", "completed", "dnf"],
@@ -267,7 +239,7 @@ export const MEDIA_CONFIG: Record<MediaType, MediaTypeConfig> = {
     showStatus: true,
     showOwnership: true,
     primaryCta: { label: "Log", status: "completed", ownership: "none" },
-    secondaryCta: { label: "Want to read", status: "want", ownership: "none" },
+    secondaryCta: { label: "Backlog", status: "want", ownership: "none" },
   },
   record: {
     statusOptions: [],
@@ -277,7 +249,7 @@ export const MEDIA_CONFIG: Record<MediaType, MediaTypeConfig> = {
     showStatus: false,
     showOwnership: true,
     primaryCta: { label: "Owned", status: "completed", ownership: "physical" },
-    secondaryCta: { label: "Want to own", status: "want", ownership: "want_to_own" },
+    secondaryCta: { label: "Wishlist", status: "completed", ownership: "want_to_own" },
   },
   game: {
     statusOptions: ["want", "consuming", "completed", "dnf"],
@@ -287,6 +259,6 @@ export const MEDIA_CONFIG: Record<MediaType, MediaTypeConfig> = {
     showStatus: true,
     showOwnership: true,
     primaryCta: { label: "Log", status: "completed", ownership: "none" },
-    secondaryCta: { label: "Want to play", status: "want", ownership: "none" },
+    secondaryCta: { label: "Backlog", status: "want", ownership: "none" },
   },
 };

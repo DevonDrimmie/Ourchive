@@ -16,7 +16,7 @@ export function ProfileMediaTypeNav({
   className?: string;
 }) {
   return (
-    <div className={cn("grid grid-cols-5 gap-2", className)}>
+    <div className={cn("grid grid-cols-4 gap-2", className)}>
       {MEDIA_TYPES.map((type) => {
         const Icon = MEDIA_TYPE_ICONS[type];
         const active = activeMediaType === type;

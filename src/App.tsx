@@ -133,15 +133,6 @@ function AppRoutes() {
         }
       />
       <Route
-        path="/tv"
-        element={
-          <ProtectedRoute>
-            <Header />
-            <HomePage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
         path="/books"
         element={
           <ProtectedRoute>
@@ -206,15 +197,6 @@ function AppRoutes() {
       />
       <Route
         path="/collection/movies"
-        element={
-          <ProtectedRoute>
-            <Header />
-            <CollectionPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/collection/tv"
         element={
           <ProtectedRoute>
             <Header />

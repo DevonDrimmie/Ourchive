@@ -34,14 +34,14 @@ export function LogDialog({ open, onOpenChange, onSelect }: LogDialogProps) {
         <div className="border-b border-border px-4 pt-4 pb-3">
           <DialogTitle className="text-base">Log something</DialogTitle>
           <DialogDescription className="sr-only">
-            Search for a movie, show, book, record, or game to log
+            Search for a movie, book, record, or game to log
           </DialogDescription>
           <div className="relative mt-3">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search movies, TV, books, records, games..."
+              placeholder="Search movies, books, records, games..."
               className="pl-9 pr-9"
               autoFocus
             />

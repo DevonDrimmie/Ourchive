@@ -12,7 +12,6 @@ import { Button } from "@/components/ui/button";
 const filters = [
   { value: "all", label: "All", path: "/" },
   { value: "movie", label: "Movies", path: "/movies" },
-  { value: "tv", label: "TV", path: "/tv" },
   { value: "book", label: "Books", path: "/books" },
   { value: "record", label: "Records", path: "/records" },
   { value: "game", label: "Games", path: "/games" },
@@ -21,7 +20,6 @@ const filters = [
 const pathToFilter: Record<string, string> = {
   "/": "all",
   "/movies": "movie",
-  "/tv": "tv",
   "/books": "book",
   "/records": "record",
   "/games": "game",

@@ -27,7 +27,6 @@ import { cn } from "@/lib/utils";
 const typeFilters = [
   { value: "all", label: "All", path: "/collection" },
   { value: "movie", label: "Movies", path: "/collection/movies" },
-  { value: "tv", label: "TV", path: "/collection/tv" },
   { value: "book", label: "Books", path: "/collection/books" },
   { value: "record", label: "Records", path: "/collection/records" },
   { value: "game", label: "Games", path: "/collection/games" },
@@ -36,7 +35,6 @@ const typeFilters = [
 const pathToFilter: Record<string, string> = {
   "/collection": "all",
   "/collection/movies": "movie",
-  "/collection/tv": "tv",
   "/collection/books": "book",
   "/collection/records": "record",
   "/collection/games": "game",
@@ -45,13 +43,17 @@ const pathToFilter: Record<string, string> = {
 const viewTabs: { value: CollectionView; label: string }[] = [
   { value: "all", label: "All" },
   { value: "owned", label: "Owned" },
-  { value: "want", label: "Want" },
+  { value: "backlog", label: "Backlog" },
+  { value: "wishlist", label: "Wishlist" },
   { value: "completed", label: "Completed" },
 ];
 
+/** Records only track ownership, so status-based views don't apply to them. */
+const RECORD_VIEWS: CollectionView[] = ["all", "owned", "wishlist"];
+
 const statusFilters = [
   { value: "all", label: "All" },
-  { value: "want", label: "Wishlist" },
+  { value: "want", label: "Backlog" },
   { value: "consuming", label: "In Progress" },
   { value: "completed", label: "Completed" },
 ];
@@ -67,9 +69,14 @@ export function CollectionPage() {
   const location = useLocation();
   const navigate = useNavigate();
   const mediaType = pathToFilter[location.pathname] ?? "all";
+  const isRecords = mediaType === "record";
 
   const { user } = useAuth();
-  const [view, setView] = useState<CollectionView>("all");
+  const [selectedView, setView] = useState<CollectionView>("all");
+  const visibleViewTabs = isRecords
+    ? viewTabs.filter((t) => RECORD_VIEWS.includes(t.value))
+    : viewTabs;
+  const view = visibleViewTabs.some((t) => t.value === selectedView) ? selectedView : "all";
   const [status, setStatus] = useState("all");
   const [sortBy, setSortBy] = useState("date");
   const [userId, setUserId] = useState<string>(user?.id ?? "");
@@ -81,7 +88,7 @@ export function CollectionPage() {
   const effectiveUserId = userId || user?.id || "";
 
   const activeFilterCount = [
-    status !== "all",
+    !isRecords && status !== "all",
     ownershipFilter !== "all",
     genreFilter !== "all",
     sortBy !== "date",
@@ -99,7 +106,7 @@ export function CollectionPage() {
   const { data: entries, isLoading } = useCollection({
     mediaType,
     view,
-    status,
+    status: isRecords ? "all" : status,
     ownership: ownershipFilter !== "all" ? ownershipFilter : undefined,
     userId: effectiveUserId || undefined,
     sortBy,
@@ -267,7 +274,7 @@ export function CollectionPage() {
       <div className="mt-4 flex items-center justify-between gap-3">
         <Tabs value={view} onValueChange={(v) => setView(v as CollectionView)}>
           <TabsList>
-            {viewTabs.map((t) => (
+            {visibleViewTabs.map((t) => (
               <TabsTrigger key={t.value} value={t.value} className="text-xs">
                 {t.label}
               </TabsTrigger>
@@ -293,23 +300,25 @@ export function CollectionPage() {
           </PopoverTrigger>
           <PopoverContent align="end" className="w-72">
             <div className="grid grid-cols-2 gap-3">
-              <div className="flex flex-col gap-1">
-                <label className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-                  Status
-                </label>
-                <Select value={status} onValueChange={setStatus}>
-                  <SelectTrigger className="h-8 w-full text-xs">
-                    <SelectValue placeholder="Status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {statusFilters.map((f) => (
-                      <SelectItem key={f.value} value={f.value}>
-                        {f.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              {!isRecords && (
+                <div className="flex flex-col gap-1">
+                  <label className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                    Status
+                  </label>
+                  <Select value={status} onValueChange={setStatus}>
+                    <SelectTrigger className="h-8 w-full text-xs">
+                      <SelectValue placeholder="Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {statusFilters.map((f) => (
+                        <SelectItem key={f.value} value={f.value}>
+                          {f.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
 
               <div className="flex flex-col gap-1">
                 <label className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
@@ -324,7 +333,7 @@ export function CollectionPage() {
                     <SelectItem value="owned">Owned</SelectItem>
                     <SelectItem value="physical">Physical</SelectItem>
                     <SelectItem value="digital">Digital</SelectItem>
-                    <SelectItem value="want_to_own">Want to Own</SelectItem>
+                    <SelectItem value="want_to_own">Wishlist</SelectItem>
                     <SelectItem value="none">Not Owned</SelectItem>
                   </SelectContent>
                 </Select>

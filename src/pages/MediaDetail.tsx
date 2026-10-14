@@ -17,7 +17,7 @@ import { byCoverShape, getMediaSubtitle } from "@/lib/media";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useMediaDetail, useMediaEntries } from "@/lib/hooks/useEntries";
 import { useAuth } from "@/lib/hooks/useAuth";
-import { MEDIA_TYPE_LABELS, MEDIA_TYPE_VERB } from "@/types";
+import { MEDIA_TYPE_LABELS, MEDIA_TYPE_VERB, OWNERSHIP_LABELS } from "@/types";
 import type { Profile, Entry, EntryStatus } from "@/types";
 import { ArrowLeft, Loader2, Calendar, Pencil } from "lucide-react";
 import { format } from "date-fns";
@@ -185,7 +185,9 @@ export function MediaDetailPage() {
                           {entry.profiles?.display_name}
                         </Link>
                         <p className="text-xs text-muted-foreground">
-                          {MEDIA_TYPE_VERB[media.media_type][entry.status as EntryStatus]}
+                          {media.media_type === "record"
+                            ? OWNERSHIP_LABELS[entry.ownership]
+                            : MEDIA_TYPE_VERB[media.media_type][entry.status as EntryStatus]}
                         </p>
                       </div>
                     </div>

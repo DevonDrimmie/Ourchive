@@ -31,7 +31,7 @@ import { Loader2, Camera } from "lucide-react";
 import { ProfileMediaTypeNav } from "@/components/profile/ProfileMediaTypeNav";
 
 /** Order of Top 4 blocks on profile home */
-const topFourOrder: MediaType[] = ["movie", "book", "record", "tv", "game"];
+const topFourOrder: MediaType[] = ["movie", "book", "record", "game"];
 
 export function ProfilePage() {
   const { id } = useParams<{ id: string }>();
@@ -223,7 +223,8 @@ export function ProfilePage() {
         <TabsList className="w-full justify-start">
           <TabsTrigger value="stats">Stats</TabsTrigger>
           <TabsTrigger value="reviews">Reviews</TabsTrigger>
-          <TabsTrigger value="wanted">Wanted</TabsTrigger>
+          <TabsTrigger value="backlog">Backlog</TabsTrigger>
+          <TabsTrigger value="wishlist">Wishlist</TabsTrigger>
         </TabsList>
 
         <TabsContent value="stats" className="mt-4">
@@ -234,8 +235,12 @@ export function ProfilePage() {
           <CollectionReviewsList entries={tabEntries} showMediaTypeBadge />
         </TabsContent>
 
-        <TabsContent value="wanted" className="mt-4">
-          <CollectionWantList entries={tabEntries} showMediaTypeBadge />
+        <TabsContent value="backlog" className="mt-4">
+          <CollectionWantList entries={tabEntries} kind="backlog" showMediaTypeBadge />
+        </TabsContent>
+
+        <TabsContent value="wishlist" className="mt-4">
+          <CollectionWantList entries={tabEntries} kind="wishlist" showMediaTypeBadge />
         </TabsContent>
       </Tabs>
     </PageShell>

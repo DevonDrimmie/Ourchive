@@ -93,15 +93,22 @@ export function CollectionReviewsList({
   );
 }
 
+/** Backlog = want to consume (status); Wishlist = want to own (ownership). */
 export function CollectionWantList({
   entries,
+  kind,
   showMediaTypeBadge,
 }: {
   entries: EntryWithMedia[];
+  kind: "backlog" | "wishlist";
   showMediaTypeBadge?: boolean;
 }) {
   const wanted = [...entries]
-    .filter((e) => e.status === "want")
+    .filter((e) =>
+      kind === "wishlist"
+        ? e.ownership === "want_to_own"
+        : e.status === "want" && e.media.media_type !== "record"
+    )
     .sort(
       (a, b) =>
         new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
@@ -110,7 +117,7 @@ export function CollectionWantList({
   if (wanted.length === 0) {
     return (
       <p className="text-sm text-muted-foreground py-8 text-center">
-        Nothing on the wishlist yet.
+        {kind === "wishlist" ? "Nothing on the wishlist yet." : "Nothing in the backlog yet."}
       </p>
     );
   }

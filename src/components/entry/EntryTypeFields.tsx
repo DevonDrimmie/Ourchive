@@ -18,7 +18,6 @@ import {
   type MovieEntryDetails,
   type RecordEntryDetails,
   type RecordFormat,
-  type TvEntryDetails,
 } from "@/types";
 
 const NONE = "__none__";
@@ -113,27 +112,6 @@ export function EntryTypeFields({
             onChange={(n) => onChange({ ...d, rewatch_count: n ?? 0 })}
           />
         </Field>
-      );
-    }
-    case "tv": {
-      const d = value as TvEntryDetails;
-      return (
-        <div className="flex gap-3">
-          <Field label="Season">
-            <NumberInput
-              min={1}
-              value={d.current_season}
-              onChange={(n) => onChange({ ...d, current_season: n })}
-            />
-          </Field>
-          <Field label="Episode">
-            <NumberInput
-              min={1}
-              value={d.current_episode}
-              onChange={(n) => onChange({ ...d, current_episode: n })}
-            />
-          </Field>
-        </div>
       );
     }
     case "book": {

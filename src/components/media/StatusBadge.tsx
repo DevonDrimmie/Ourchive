@@ -1,5 +1,5 @@
 import { Badge } from "@/components/ui/badge";
-import { Package, Eye, Clock, Bookmark, Disc3, Monitor, Ban } from "lucide-react";
+import { Gift, Eye, Clock, Bookmark, Disc3, Monitor, Ban } from "lucide-react";
 import type { EntryStatus, OwnershipStatus, MediaType } from "@/types";
 import { cn } from "@/lib/utils";
 
@@ -14,7 +14,7 @@ export const statusConfig: Record<
   EntryStatus,
   { label: string; icon: typeof Eye; variant: "default" | "secondary" | "outline" }
 > = {
-  want: { label: "Want", icon: Bookmark, variant: "outline" },
+  want: { label: "Backlog", icon: Bookmark, variant: "outline" },
   consuming: { label: "In Progress", icon: Clock, variant: "secondary" },
   completed: { label: "Completed", icon: Eye, variant: "default" },
   dnf: { label: "DNF", icon: Ban, variant: "outline" },
@@ -22,17 +22,16 @@ export const statusConfig: Record<
 
 export const completedLabels: Partial<Record<MediaType, string>> = {
   movie: "Watched",
-  tv: "Watched",
   book: "Read",
   game: "Played",
 };
 
 export const ownershipConfig: Record<
   OwnershipStatus,
-  { label: string; icon: typeof Package } | null
+  { label: string; icon: typeof Gift } | null
 > = {
   none: null,
-  want_to_own: { label: "Want to own", icon: Package },
+  want_to_own: { label: "Wishlist", icon: Gift },
   physical: { label: "Physical", icon: Disc3 },
   digital: { label: "Digital", icon: Monitor },
 };

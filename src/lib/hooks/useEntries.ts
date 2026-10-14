@@ -238,7 +238,7 @@ export function useFeed(mediaTypeFilter?: string) {
   });
 }
 
-export type CollectionView = "all" | "owned" | "want" | "completed";
+export type CollectionView = "all" | "owned" | "backlog" | "wishlist" | "completed";
 
 interface CollectionFilters {
   mediaType?: string;
@@ -268,8 +268,10 @@ export function useCollection(filters: CollectionFilters) {
       }
       if (filters.view === "owned") {
         query = query.in("ownership", ["physical", "digital"]);
-      } else if (filters.view === "want") {
-        query = query.or("status.eq.want,ownership.eq.want_to_own");
+      } else if (filters.view === "backlog") {
+        query = query.eq("status", "want");
+      } else if (filters.view === "wishlist") {
+        query = query.eq("ownership", "want_to_own");
       } else if (filters.view === "completed") {
         query = query.eq("status", "completed");
       }

@@ -158,8 +158,8 @@ function processRecords() {
     } else if (status.startsWith("Owned AB")) {
       emitEntry(match, AB_USER, "completed", "physical", null, null);
     } else if (status === "Want") {
-      emitEntry(match, DM_USER, "want", "want_to_own", null, null);
-      emitEntry(match, AB_USER, "want", "want_to_own", null, null);
+      emitEntry(match, DM_USER, "completed", "want_to_own", null, null);
+      emitEntry(match, AB_USER, "completed", "want_to_own", null, null);
     }
     sql.push("");
   }
