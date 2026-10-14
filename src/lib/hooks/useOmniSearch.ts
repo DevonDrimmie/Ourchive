@@ -18,18 +18,21 @@ export type OmniResult = SearchResult & {
 
 const externalKey = (source: string, id: string) => `${source}:${id}`;
 
-export function useOmniSearch(query: string) {
+/** Search every media type (top 3 each), or one type in depth, and mark titles already logged. */
+export function useOmniSearch(query: string, type: MediaType | "all" = "all") {
   const debouncedQuery = useDebounce(query, 400);
 
   return useQuery({
-    queryKey: ["omni-search", debouncedQuery],
+    queryKey: ["omni-search", type, debouncedQuery],
     queryFn: async (): Promise<OmniResult[]> => {
+      const types = type === "all" ? MEDIA_TYPES : [type];
+      const perType = type === "all" ? 3 : 12;
       const settled = await Promise.allSettled(
-        MEDIA_TYPES.map((t) => searchByType(debouncedQuery, t))
+        types.map((t) => searchByType(debouncedQuery, t))
       );
 
       const results: SearchResult[] = settled.flatMap((s) =>
-        s.status === "fulfilled" ? s.value.slice(0, 3) : []
+        s.status === "fulfilled" ? s.value.slice(0, perType) : []
       );
 
       const externalIds = results

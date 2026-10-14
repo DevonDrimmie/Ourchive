@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   LogOut,
@@ -8,13 +8,13 @@ import {
   Search,
   BookText,
   Loader2,
-  Plus,
+  CirclePlus,
   FileUp,
   KeyRound,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -25,149 +25,125 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { ChangePasswordDialog } from "@/components/auth/ChangePasswordDialog";
+import { EntryDialog } from "@/components/entry/EntryDialog";
+import { LogDialog } from "@/components/entry/LogDialog";
+import { OmniResultRow } from "@/components/search/OmniResultRow";
 import { useAuth } from "@/lib/hooks/useAuth";
 import { useProfiles } from "@/lib/hooks/useEntries";
 import { useOmniSearch } from "@/lib/hooks/useOmniSearch";
 import type { OmniResult } from "@/lib/hooks/useOmniSearch";
-import type { EntryStatus } from "@/types";
 import { cn } from "@/lib/utils";
 import { usePageWidthClass } from "./PageShell";
-import { getMediaSubtitle } from "@/lib/media";
-import { MEDIA_TYPE_ICONS } from "@/components/media/mediaTypeIcons";
 
-const statusColors: Record<EntryStatus, string> = {
-  want: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30",
-  consuming: "bg-blue-500/20 text-blue-400 border-blue-500/30",
-  completed: "bg-primary/20 text-primary border-primary/30",
-  dnf: "bg-red-500/20 text-red-400 border-red-500/30",
-};
-
-const statusLabels: Record<EntryStatus, string> = {
-  want: "Want",
-  consuming: "In Progress",
-  completed: "Done",
-  dnf: "DNF",
-};
-
-function SearchResultRow({
-  result,
-  onClick,
+/** Collapsed to an icon; expands into the omni-search input while the other header actions hide. */
+function HeaderSearch({
+  open,
+  onOpenChange,
 }: {
-  result: OmniResult;
-  onClick: () => void;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }) {
-  const Icon = MEDIA_TYPE_ICONS[result.media_type];
-  const navigate = useNavigate();
-
-  const subtitle = getMediaSubtitle(result, { first: true });
-
-  const handleClick = () => {
-    if (result.existingMediaId) {
-      navigate(`/media/${result.existingMediaId}`);
-    } else {
-      navigate("/search", {
-        state: { prefill: result },
-      });
-    }
-    onClick();
-  };
-
-  return (
-    <button
-      onClick={handleClick}
-      className="flex w-full items-center gap-2.5 px-3 py-2 text-left hover:bg-accent transition-colors"
-    >
-      <Icon className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-
-      <div className="min-w-0 flex-1">
-        <div className="flex items-baseline gap-1.5">
-          <span className="text-sm font-medium truncate">{result.title}</span>
-          {result.year && (
-            <span className="text-xs text-muted-foreground shrink-0">
-              {result.year}
-            </span>
-          )}
-        </div>
-        {subtitle && (
-          <p className="text-xs text-muted-foreground truncate">{subtitle}</p>
-        )}
-      </div>
-
-      <div className="hidden sm:flex shrink-0 items-center gap-1">
-        {result.userStatuses && result.userStatuses.length > 0 ? (
-          result.userStatuses.map((s) => (
-            <Badge
-              key={s.userId}
-              variant="outline"
-              className={cn(
-                "text-[10px] px-1.5 py-0 h-5 gap-0.5 whitespace-nowrap",
-                statusColors[s.status]
-              )}
-            >
-              {s.displayName?.split(" ")[0]}: {statusLabels[s.status]}
-              {(s.ownership === "physical" || s.ownership === "digital") && " ✦"}
-            </Badge>
-          ))
-        ) : (
-          <Plus className="h-3.5 w-3.5 text-muted-foreground/40" />
-        )}
-      </div>
-    </button>
-  );
-}
-
-function OmniSearchBar() {
   const [query, setQuery] = useState("");
-  const [open, setOpen] = useState(false);
   const { data: results, isLoading } = useOmniSearch(query);
+  const navigate = useNavigate();
+  const { pathname } = useLocation();
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (
-        containerRef.current &&
-        !containerRef.current.contains(e.target as Node)
-      ) {
-        setOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+  const close = useCallback(() => {
+    setQuery("");
+    onOpenChange(false);
+  }, [onOpenChange]);
 
-  const showDropdown = open && query.length >= 2;
+  useEffect(() => {
+    if (open) inputRef.current?.focus();
+  }, [open]);
+
+  useEffect(() => {
+    close();
+  }, [pathname, close]);
+
+  useEffect(() => {
+    if (!open) return;
+    function handlePointerDown(e: MouseEvent) {
+      if (!containerRef.current?.contains(e.target as Node)) close();
+    }
+    document.addEventListener("mousedown", handlePointerDown);
+    return () => document.removeEventListener("mousedown", handlePointerDown);
+  }, [open, close]);
+
+  const handleSelect = (result: OmniResult) => {
+    if (result.existingMediaId) {
+      navigate(`/media/${result.existingMediaId}`);
+    } else {
+      navigate("/search", { state: { prefill: result } });
+    }
+    close();
+  };
+
+  const goToFullSearch = () => {
+    navigate(`/search?q=${encodeURIComponent(query)}`);
+    close();
+  };
+
+  const showDropdown = open && query.trim().length >= 2;
 
   return (
-    <div ref={containerRef} className="relative flex-1 min-w-0 max-w-md">
-      <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-      <Input
-        ref={inputRef}
-        value={query}
-        onChange={(e) => {
-          setQuery(e.target.value);
-          setOpen(true);
-        }}
-        onFocus={() => query.length >= 2 && setOpen(true)}
-        placeholder="Search movies, books, records, games..."
-        className="h-8 pl-8 pr-3 text-sm bg-muted/50 border-border/50 focus-visible:bg-background"
-      />
-      {isLoading && query.length >= 2 && (
-        <Loader2 className="absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 animate-spin text-muted-foreground" />
+    <div
+      ref={containerRef}
+      className={cn(
+        "relative ml-auto min-w-0 transition-[width] duration-300 ease-out",
+        open ? "w-full max-w-md" : "w-8"
+      )}
+    >
+      {open ? (
+        <>
+          <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            ref={inputRef}
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Escape") close();
+              if (e.key === "Enter" && query.trim().length >= 2) goToFullSearch();
+            }}
+            placeholder="Search movies, books, records, games..."
+            className="h-8 border-border/50 bg-muted/50 pl-8 pr-8 text-sm focus-visible:bg-background"
+          />
+          <button
+            type="button"
+            onClick={close}
+            aria-label="Close search"
+            className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+          >
+            {isLoading && query.trim().length >= 2 ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <X className="h-3.5 w-3.5" />
+            )}
+          </button>
+        </>
+      ) : (
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8"
+          aria-label="Search"
+          onClick={() => onOpenChange(true)}
+        >
+          <Search className="h-4 w-4" />
+        </Button>
       )}
 
       {showDropdown && (
-        <div className="absolute top-full left-0 right-0 mt-1 overflow-hidden rounded-lg border border-border bg-popover shadow-lg z-50">
+        <div className="absolute top-full left-0 right-0 z-50 mt-1 overflow-hidden rounded-lg border border-border bg-popover shadow-lg">
           {results && results.length > 0 ? (
-            <div className="max-h-80 overflow-y-auto divide-y divide-border/50">
+            <div className="max-h-80 divide-y divide-border/50 overflow-y-auto">
               {results.map((r) => (
-                <SearchResultRow
+                <OmniResultRow
                   key={`${r.external_source}-${r.external_id}`}
                   result={r}
-                  onClick={() => {
-                    setOpen(false);
-                    setQuery("");
-                  }}
+                  onSelect={handleSelect}
                 />
               ))}
             </div>
@@ -177,17 +153,14 @@ function OmniSearchBar() {
             </p>
           ) : null}
 
-          <Link
-            to={`/search?q=${encodeURIComponent(query)}`}
-            onClick={() => {
-              setOpen(false);
-              setQuery("");
-            }}
-            className="flex items-center justify-center gap-1.5 border-t border-border/50 px-3 py-2 text-xs text-muted-foreground hover:bg-accent transition-colors"
+          <button
+            type="button"
+            onClick={goToFullSearch}
+            className="flex w-full items-center justify-center gap-1.5 border-t border-border/50 px-3 py-2 text-xs text-muted-foreground transition-colors hover:bg-accent"
           >
             <Search className="h-3 w-3" />
             Full search for "{query}"
-          </Link>
+          </button>
         </div>
       )}
     </div>
@@ -252,6 +225,10 @@ export function Header() {
   const { user, profile, signOut } = useAuth();
   const navigate = useNavigate();
   const [changePasswordOpen, setChangePasswordOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [logOpen, setLogOpen] = useState(false);
+  const [logResult, setLogResult] = useState<OmniResult | null>(null);
+  const [entryOpen, setEntryOpen] = useState(false);
   const pageWidthClass = usePageWidthClass();
   const initials = profile?.display_name
     ?.split(" ")
@@ -291,15 +268,25 @@ export function Header() {
           </Link>
         </div>
 
-        <div className="hidden md:flex flex-1 justify-center">
-          <OmniSearchBar />
-        </div>
+        <HeaderSearch open={searchOpen} onOpenChange={setSearchOpen} />
 
-        <div className="flex md:hidden flex-1">
-          <OmniSearchBar />
-        </div>
+        <div
+          inert={searchOpen}
+          className={cn(
+            "flex shrink-0 items-center gap-2 overflow-hidden transition-all duration-300 ease-out",
+            searchOpen ? "-ml-4 max-w-0 opacity-0" : "-ml-2 max-w-64 opacity-100"
+          )}
+        >
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 text-primary hover:text-primary"
+            aria-label="Log something"
+            onClick={() => setLogOpen(true)}
+          >
+            <CirclePlus className="h-5 w-5" />
+          </Button>
 
-        <div className="flex items-center gap-2 shrink-0">
           <Button
             asChild
             variant="ghost"
@@ -362,6 +349,15 @@ export function Header() {
             open={changePasswordOpen}
             onOpenChange={setChangePasswordOpen}
           />
+          <LogDialog
+            open={logOpen}
+            onOpenChange={setLogOpen}
+            onSelect={(result) => {
+              setLogResult(result);
+              setEntryOpen(true);
+            }}
+          />
+          <EntryDialog result={logResult} open={entryOpen} onOpenChange={setEntryOpen} />
 
           <Sheet>
             <SheetTrigger asChild>

@@ -9,6 +9,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { BlendedMediaCard } from "@/components/media/BlendedMediaCard";
 import { PageShell } from "@/components/layout/PageShell";
 import {
@@ -16,8 +18,9 @@ import {
   useProfiles,
   useEntriesForMediaList,
 } from "@/lib/hooks/useEntries";
+import type { CollectionView } from "@/lib/hooks/useEntries";
 import { useAuth } from "@/lib/hooks/useAuth";
-import { Loader2 } from "lucide-react";
+import { Loader2, SlidersHorizontal } from "lucide-react";
 import type { Media, Entry, Profile } from "@/types";
 import { cn } from "@/lib/utils";
 
@@ -39,6 +42,13 @@ const pathToFilter: Record<string, string> = {
   "/collection/games": "game",
 };
 
+const viewTabs: { value: CollectionView; label: string }[] = [
+  { value: "all", label: "All" },
+  { value: "owned", label: "Owned" },
+  { value: "want", label: "Want" },
+  { value: "completed", label: "Completed" },
+];
+
 const statusFilters = [
   { value: "all", label: "All" },
   { value: "want", label: "Wishlist" },
@@ -59,6 +69,7 @@ export function CollectionPage() {
   const mediaType = pathToFilter[location.pathname] ?? "all";
 
   const { user } = useAuth();
+  const [view, setView] = useState<CollectionView>("all");
   const [status, setStatus] = useState("all");
   const [sortBy, setSortBy] = useState("date");
   const [userId, setUserId] = useState<string>(user?.id ?? "");
@@ -69,8 +80,25 @@ export function CollectionPage() {
 
   const effectiveUserId = userId || user?.id || "";
 
+  const activeFilterCount = [
+    status !== "all",
+    ownershipFilter !== "all",
+    genreFilter !== "all",
+    sortBy !== "date",
+    !!user && effectiveUserId !== user.id,
+  ].filter(Boolean).length;
+
+  const resetFilters = () => {
+    setStatus("all");
+    setOwnershipFilter("all");
+    setGenreFilter("all");
+    setSortBy("date");
+    setUserId(user?.id ?? "");
+  };
+
   const { data: entries, isLoading } = useCollection({
     mediaType,
+    view,
     status,
     ownership: ownershipFilter !== "all" ? ownershipFilter : undefined,
     userId: effectiveUserId || undefined,
@@ -236,106 +264,147 @@ export function CollectionPage() {
         </Tabs>
       </div>
 
-      <div className="mt-3 flex flex-wrap gap-3">
-        <div className="flex flex-col gap-1">
-          <label className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-            Status
-          </label>
-          <Select value={status} onValueChange={setStatus}>
-            <SelectTrigger className="w-32 h-8 text-xs">
-              <SelectValue placeholder="Status" />
-            </SelectTrigger>
-            <SelectContent>
-              {statusFilters.map((f) => (
-                <SelectItem key={f.value} value={f.value}>
-                  {f.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+      <div className="mt-4 flex items-center justify-between gap-3">
+        <Tabs value={view} onValueChange={(v) => setView(v as CollectionView)}>
+          <TabsList>
+            {viewTabs.map((t) => (
+              <TabsTrigger key={t.value} value={t.value} className="text-xs">
+                {t.label}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </Tabs>
 
-        <div className="flex flex-col gap-1">
-          <label className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-            Ownership
-          </label>
-          <Select value={ownershipFilter} onValueChange={setOwnershipFilter}>
-            <SelectTrigger className="w-32 h-8 text-xs">
-              <SelectValue placeholder="Ownership" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Any</SelectItem>
-              <SelectItem value="owned">Owned</SelectItem>
-              <SelectItem value="physical">Physical</SelectItem>
-              <SelectItem value="digital">Digital</SelectItem>
-              <SelectItem value="want_to_own">Want to Own</SelectItem>
-              <SelectItem value="none">Not Owned</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              size="icon"
+              className="relative h-8 w-8 shrink-0"
+              aria-label={activeFilterCount ? `Filters (${activeFilterCount} active)` : "Filters"}
+            >
+              <SlidersHorizontal className="h-4 w-4" />
+              {activeFilterCount > 0 && (
+                <span className="absolute -top-1.5 -right-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-semibold text-primary-foreground">
+                  {activeFilterCount}
+                </span>
+              )}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent align="end" className="w-72">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="flex flex-col gap-1">
+                <label className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                  Status
+                </label>
+                <Select value={status} onValueChange={setStatus}>
+                  <SelectTrigger className="h-8 w-full text-xs">
+                    <SelectValue placeholder="Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {statusFilters.map((f) => (
+                      <SelectItem key={f.value} value={f.value}>
+                        {f.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
-        <div className="flex flex-col gap-1">
-          <label className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-            Genre
-          </label>
-          <Select
-            value={genreFilter}
-            onValueChange={setGenreFilter}
-            disabled={availableGenres.length === 0}
-          >
-            <SelectTrigger className="w-36 h-8 text-xs">
-              <SelectValue placeholder="Genre" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Any</SelectItem>
-              {availableGenres.map((g) => (
-                <SelectItem key={g} value={g}>
-                  {g}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                  Ownership
+                </label>
+                <Select value={ownershipFilter} onValueChange={setOwnershipFilter}>
+                  <SelectTrigger className="h-8 w-full text-xs">
+                    <SelectValue placeholder="Ownership" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Any</SelectItem>
+                    <SelectItem value="owned">Owned</SelectItem>
+                    <SelectItem value="physical">Physical</SelectItem>
+                    <SelectItem value="digital">Digital</SelectItem>
+                    <SelectItem value="want_to_own">Want to Own</SelectItem>
+                    <SelectItem value="none">Not Owned</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
-        <div className="flex flex-col gap-1">
-          <label className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-            Sort by
-          </label>
-          <Select value={sortBy} onValueChange={setSortBy}>
-            <SelectTrigger className="w-32 h-8 text-xs">
-              <SelectValue placeholder="Sort" />
-            </SelectTrigger>
-            <SelectContent>
-              {sortOptions.map((s) => (
-                <SelectItem key={s.value} value={s.value}>
-                  {s.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                  Genre
+                </label>
+                <Select
+                  value={genreFilter}
+                  onValueChange={setGenreFilter}
+                  disabled={availableGenres.length === 0}
+                >
+                  <SelectTrigger className="h-8 w-full text-xs">
+                    <SelectValue placeholder="Genre" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Any</SelectItem>
+                    {availableGenres.map((g) => (
+                      <SelectItem key={g} value={g}>
+                        {g}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
-        <div className="ml-auto flex flex-col gap-1">
-          <label className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-            User
-          </label>
-          <Select
-            value={effectiveUserId}
-            onValueChange={setUserId}
-            disabled={!profiles?.length}
-          >
-            <SelectTrigger className="w-36 h-8 text-xs">
-              <SelectValue placeholder="User" />
-            </SelectTrigger>
-            <SelectContent>
-              {profiles?.map((p) => (
-                <SelectItem key={p.id} value={p.id}>
-                  {p.id === user?.id ? "My Collection" : p.display_name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                  Sort by
+                </label>
+                <Select value={sortBy} onValueChange={setSortBy}>
+                  <SelectTrigger className="h-8 w-full text-xs">
+                    <SelectValue placeholder="Sort" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {sortOptions.map((s) => (
+                      <SelectItem key={s.value} value={s.value}>
+                        {s.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                  User
+                </label>
+                <Select
+                  value={effectiveUserId}
+                  onValueChange={setUserId}
+                  disabled={!profiles?.length}
+                >
+                  <SelectTrigger className="h-8 w-full text-xs">
+                    <SelectValue placeholder="User" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {profiles?.map((p) => (
+                      <SelectItem key={p.id} value={p.id}>
+                        {p.id === user?.id ? "My Collection" : p.display_name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            {activeFilterCount > 0 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="mt-3 h-7 w-full text-xs"
+                onClick={resetFilters}
+              >
+                Reset filters
+              </Button>
+            )}
+          </PopoverContent>
+        </Popover>
       </div>
 
       <Separator className="my-6" />
