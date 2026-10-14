@@ -134,12 +134,16 @@ async function main() {
       if (tmdb.cover_url) sets.push(`cover_url = ${esc(tmdb.cover_url)}`);
       if (tmdb.external_id) sets.push(`external_id = ${esc(tmdb.external_id)}`);
       if (tmdb.external_source) sets.push(`external_source = ${esc(tmdb.external_source)}`);
-      if (tmdb.overview) sets.push(`metadata = jsonb_set(coalesce(metadata, '{}'), '{overview}', ${esc(JSON.stringify(tmdb.overview))}::jsonb)`);
       if (sets.length > 0) {
         sql.push(
           `UPDATE media SET ${sets.join(", ")} WHERE title = ${esc(title)} AND media_type = 'movie';`
         );
         found++;
+      }
+      if (tmdb.overview) {
+        sql.push(
+          `UPDATE movies SET overview = coalesce(movies.overview, ${esc(tmdb.overview)}) FROM media m WHERE movies.media_id = m.id AND m.title = ${esc(title)} AND m.media_type = 'movie';`
+        );
       }
     }
     await sleep(260);
@@ -167,13 +171,17 @@ async function main() {
       if (ol.cover_url) sets.push(`cover_url = ${esc(ol.cover_url)}`);
       if (ol.external_id) sets.push(`external_id = ${esc(ol.external_id)}`);
       if (ol.external_source) sets.push(`external_source = ${esc(ol.external_source)}`);
-      if (ol.pages) sets.push(`metadata = jsonb_set(coalesce(metadata, '{}'), '{pages}', '${ol.pages}'::jsonb)`);
       if (sets.length > 0) {
         sql.push(
           `UPDATE media SET ${sets.join(", ")} WHERE title = ${esc(title)} AND media_type = 'book';`
         );
         bookFound++;
         found++;
+      }
+      if (ol.pages) {
+        sql.push(
+          `UPDATE books SET pages = coalesce(books.pages, ${parseInt(ol.pages)}) FROM media m WHERE books.media_id = m.id AND m.title = ${esc(title)} AND m.media_type = 'book';`
+        );
       }
     }
     await sleep(1100);
@@ -198,13 +206,17 @@ async function main() {
       if (ol.cover_url) sets.push(`cover_url = ${esc(ol.cover_url)}`);
       if (ol.external_id) sets.push(`external_id = ${esc(ol.external_id)}`);
       if (ol.external_source) sets.push(`external_source = ${esc(ol.external_source)}`);
-      if (ol.pages) sets.push(`metadata = jsonb_set(coalesce(metadata, '{}'), '{pages}', '${ol.pages}'::jsonb)`);
       if (sets.length > 0) {
         sql.push(
           `UPDATE media SET ${sets.join(", ")} WHERE title = ${esc(title)} AND media_type = 'book';`
         );
         bookFound++;
         found++;
+      }
+      if (ol.pages) {
+        sql.push(
+          `UPDATE books SET pages = coalesce(books.pages, ${parseInt(ol.pages)}) FROM media m WHERE books.media_id = m.id AND m.title = ${esc(title)} AND m.media_type = 'book';`
+        );
       }
     }
     await sleep(1100);

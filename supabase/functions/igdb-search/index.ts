@@ -10,11 +10,16 @@ const CORS_HEADERS = {
 
 const COVER_BASE = "https://images.igdb.com/igdb/image/upload/t_cover_big";
 
+// IGDB game_types worth logging: main game, expansion, standalone expansion,
+// remake, remaster, expanded game. Excludes DLC, bundles, mods, ports, updates.
+const LOGGABLE_GAME_TYPES = "(0,2,4,8,9,10)";
+
 interface IgdbGame {
   id: number;
   name: string;
   first_release_date?: number;
   summary?: string;
+  total_rating_count?: number;
   cover?: { image_id: string };
   genres?: { name: string }[];
   platforms?: { name: string; abbreviation?: string }[];
@@ -73,11 +78,12 @@ Deno.serve(async (req) => {
 
   const apicalypse = [
     `search "${query.replace(/["\\]/g, "")}";`,
-    "fields name, first_release_date, summary, cover.image_id, genres.name,",
+    "fields name, first_release_date, summary, total_rating_count, cover.image_id, genres.name,",
     "  platforms.name, platforms.abbreviation,",
     "  involved_companies.developer, involved_companies.publisher, involved_companies.company.name;",
-    "where version_parent = null;",
-    `limit ${limit};`,
+    `where version_parent = null & game_type = ${LOGGABLE_GAME_TYPES};`,
+    // IGDB's search relevance ignores popularity, so over-fetch and re-rank below.
+    "limit 30;",
   ].join("\n");
 
   try {
@@ -94,7 +100,9 @@ Deno.serve(async (req) => {
     if (res.status === 401) cachedToken = null;
     if (!res.ok) return json({ error: `IGDB request failed (${res.status})` }, 502);
 
-    const games: IgdbGame[] = await res.json();
+    const games: IgdbGame[] = (await res.json())
+      .sort((a: IgdbGame, b: IgdbGame) => (b.total_rating_count ?? 0) - (a.total_rating_count ?? 0))
+      .slice(0, limit);
     const companies = (g: IgdbGame, role: "developer" | "publisher") =>
       (g.involved_companies ?? []).filter((c) => c[role]).map((c) => c.company.name);
 
