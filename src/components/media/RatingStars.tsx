@@ -13,24 +13,32 @@ const sizes = {
   lg: "h-6 w-6",
 };
 
-/** Read-only rating as filled glyphs only (★★★½), for compact bylines. */
-export function RatingGlyphs({
+/** Read-only rating as filled stars only (no empty outlines), for compact bylines. */
+export function CompactRating({
   rating,
+  size = 16,
   className,
 }: {
   rating: number;
+  size?: number;
   className?: string;
 }) {
   const full = Math.floor(rating);
   const half = rating - full >= 0.5;
   return (
     <span
-      className={cn("leading-none tracking-tight text-primary", className)}
+      className={cn("inline-flex items-center text-primary", className)}
       role="img"
       aria-label={`${rating} out of 5 stars`}
     >
-      {"★".repeat(full)}
-      {half && "½"}
+      {Array.from({ length: full }, (_, i) => (
+        <Star key={i} size={size} className="fill-current" aria-hidden />
+      ))}
+      {half && (
+        <span className="inline-flex overflow-hidden" style={{ width: size / 2 }} aria-hidden>
+          <Star size={size} className="shrink-0 fill-current" />
+        </span>
+      )}
     </span>
   );
 }

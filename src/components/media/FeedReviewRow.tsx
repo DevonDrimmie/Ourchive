@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { formatDistanceToNow } from "date-fns";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { CoverImage } from "./CoverImage";
-import { RatingGlyphs } from "./RatingStars";
+import { CompactRating } from "./RatingStars";
 import { statusConfig, ownershipConfig, completedLabels } from "./StatusBadge";
 import { MEDIA_TYPE_ICONS } from "./mediaTypeIcons";
 import type { EntryWithProfile } from "./BlendedMediaCard";
@@ -63,7 +63,7 @@ function Byline({ entry, profile, mediaType }: {
         </Avatar>
         <span className="truncate">{profile.display_name}</span>
       </Link>
-      {entry.rating != null && <RatingGlyphs rating={entry.rating} className="text-lg" />}
+      {entry.rating != null && <CompactRating rating={entry.rating} size={17} />}
       {labels.length > 0 && (
         <span className="text-xs text-muted-foreground">{labels.join(" · ")}</span>
       )}
