@@ -15,7 +15,9 @@ import {
   CartesianGrid,
   Legend,
 } from "recharts";
+import { useState } from "react";
 import { format, parseISO } from "date-fns";
+import { RatedMediaDialog } from "./CollectionTabLists";
 
 export interface EntryWithMedia extends Entry {
   media: Media;
@@ -137,6 +139,7 @@ function StatusChart({ entries }: { entries: EntryWithMedia[] }) {
 }
 
 function RatingChart({ entries }: { entries: EntryWithMedia[] }) {
+  const [selectedRating, setSelectedRating] = useState<number | null>(null);
   const ratingCounts: Record<number, number> = {};
   entries.forEach((e) => {
     if (e.rating != null) {
@@ -148,6 +151,11 @@ function RatingChart({ entries }: { entries: EntryWithMedia[] }) {
     rating,
     count: ratingCounts[rating] ?? 0,
   }));
+
+  const openBucket = (index: number) => {
+    const bucket = data[index];
+    if (bucket && bucket.count > 0) setSelectedRating(bucket.rating);
+  };
 
   const hasRatings = entries.some((e) => e.rating != null);
   if (!hasRatings)
@@ -171,7 +179,12 @@ function RatingChart({ entries }: { entries: EntryWithMedia[] }) {
       </div>
       <div className="flex-1 min-h-0">
         <ResponsiveContainer width="100%" height="100%" minHeight={160}>
-          <BarChart data={data} margin={{ left: -12, right: 4 }}>
+          <BarChart
+            data={data}
+            margin={{ left: -12, right: 4 }}
+            className="cursor-pointer"
+            onClick={(state) => openBucket(Number(state?.activeTooltipIndex))}
+          >
             <XAxis
               dataKey="rating"
               tick={TICK_STYLE}
@@ -185,10 +198,20 @@ function RatingChart({ entries }: { entries: EntryWithMedia[] }) {
               labelFormatter={(v) => `Rating: ${v}`}
               cursor={{ fill: "rgba(255,255,255,0.05)" }}
             />
-            <Bar dataKey="count" fill="#4ade80" radius={[4, 4, 0, 0]} />
+            <Bar
+              dataKey="count"
+              fill="#4ade80"
+              radius={[4, 4, 0, 0]}
+              onClick={(_, index) => openBucket(index)}
+            />
           </BarChart>
         </ResponsiveContainer>
       </div>
+      <RatedMediaDialog
+        entries={entries}
+        rating={selectedRating}
+        onOpenChange={(open) => !open && setSelectedRating(null)}
+      />
     </div>
   );
 }

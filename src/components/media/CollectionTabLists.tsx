@@ -1,6 +1,13 @@
 import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
-import { RatingStars } from "@/components/media/RatingStars";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { CompactRating, RatingStars } from "@/components/media/RatingStars";
 import type { Media } from "@/types";
 import { MEDIA_TYPE_LABELS } from "@/types";
 import { cn } from "@/lib/utils";
@@ -148,5 +155,62 @@ export function CollectionWantList({
         </li>
       ))}
     </ul>
+  );
+}
+
+/** Everything rated exactly `rating` (opened from the rating distribution chart). */
+export function RatedMediaDialog({
+  entries,
+  rating,
+  onOpenChange,
+}: {
+  entries: EntryWithMedia[];
+  rating: number | null;
+  onOpenChange: (open: boolean) => void;
+}) {
+  const matches = entries
+    .filter((e) => rating != null && e.rating === rating)
+    .sort((a, b) => a.media.title.localeCompare(b.media.title, undefined, { sensitivity: "base" }));
+  const mixedTypes = new Set(matches.map((e) => e.media.media_type)).size > 1;
+
+  return (
+    <Dialog open={rating != null} onOpenChange={onOpenChange}>
+      <DialogContent className="gap-0 p-0 sm:max-w-md">
+        <DialogHeader className="border-b border-border px-5 pt-5 pb-4">
+          <DialogTitle className="flex items-center gap-2">
+            Rated {rating}
+            {rating != null && <CompactRating rating={rating} size={16} />}
+          </DialogTitle>
+          <DialogDescription>
+            {matches.length} {matches.length === 1 ? "title" : "titles"}
+          </DialogDescription>
+        </DialogHeader>
+        <ul className="max-h-[60vh] space-y-2 overflow-y-auto p-4">
+          {matches.map((e) => (
+            <li key={e.id}>
+              <Link
+                to={`/media/${e.media.id}`}
+                className="flex items-center gap-3 rounded-lg border border-border/50 bg-card p-2.5 transition-colors hover:border-primary/30"
+              >
+                <CoverThumb media={e.media} />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-medium">{e.media.title}</p>
+                  <div className="mt-0.5 flex flex-wrap items-center gap-2">
+                    {e.media.year != null && (
+                      <span className="text-xs text-muted-foreground">{e.media.year}</span>
+                    )}
+                    {mixedTypes && (
+                      <Badge variant="secondary" className="text-[10px] font-normal">
+                        {MEDIA_TYPE_LABELS[e.media.media_type]}
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </DialogContent>
+    </Dialog>
   );
 }
