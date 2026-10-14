@@ -48,22 +48,22 @@ function Byline({ entry, profile, mediaType }: {
 }) {
   const labels = entryLabels(entry, mediaType);
   return (
-    <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+    <div className="flex min-w-0 flex-wrap items-center gap-x-2.5 gap-y-1">
       <Link
         to={`/profile/${profile.id}`}
-        className="flex min-w-0 items-center gap-2 text-sm font-semibold text-foreground/80 hover:text-foreground"
+        className="flex min-w-0 items-center gap-2 text-sm font-bold text-foreground/80 hover:text-foreground"
       >
-        <Avatar className="h-6 w-6 shrink-0">
+        <Avatar className="h-7 w-7 shrink-0">
           {profile.avatar_url && (
             <AvatarImage src={profile.avatar_url} alt="" className="object-cover" />
           )}
-          <AvatarFallback className="bg-muted text-[9px]">
+          <AvatarFallback className="bg-muted text-[10px]">
             {initials(profile.display_name)}
           </AvatarFallback>
         </Avatar>
         <span className="truncate">{profile.display_name}</span>
       </Link>
-      {entry.rating != null && <RatingGlyphs rating={entry.rating} className="text-base" />}
+      {entry.rating != null && <RatingGlyphs rating={entry.rating} className="text-lg" />}
       {labels.length > 0 && (
         <span className="text-xs text-muted-foreground">{labels.join(" · ")}</span>
       )}
@@ -71,14 +71,14 @@ function Byline({ entry, profile, mediaType }: {
   );
 }
 
-/** Letterboxd-style feed row: bare poster, serif title + year, per-person bylines and reviews. */
+/** Letterboxd-style feed row: bare poster, title + year, per-person bylines and reviews. */
 export function FeedReviewRow({ media, items, updatedAt }: FeedReviewRowProps) {
   const Icon = MEDIA_TYPE_ICONS[media.media_type];
   const subtitle = getMediaSubtitle(media);
   const href = `/media/${media.id}`;
 
   return (
-    <article className="flex gap-4 sm:gap-5">
+    <article className="flex gap-4 sm:gap-6">
       <Link to={href} className="w-[70px] shrink-0 self-start sm:w-[84px]">
         <CoverImage
           src={media.cover_url}
@@ -95,15 +95,15 @@ export function FeedReviewRow({ media, items, updatedAt }: FeedReviewRowProps) {
       </Link>
 
       <div className="min-w-0 flex-1">
-        <h3 className="leading-tight">
+        <h3 className="-mt-1 leading-tight">
           <Link
             to={href}
-            className="font-serif text-xl font-bold text-foreground hover:text-primary sm:text-2xl"
+            className="text-xl font-bold tracking-tight text-foreground hover:text-primary sm:text-2xl"
           >
             {media.title}
           </Link>
           {media.year && (
-            <span className="ml-2 align-baseline text-lg font-light text-muted-foreground sm:text-xl">
+            <span className="ml-2 text-lg font-normal text-muted-foreground sm:text-xl">
               {media.year}
             </span>
           )}
@@ -112,12 +112,12 @@ export function FeedReviewRow({ media, items, updatedAt }: FeedReviewRowProps) {
           <p className="mt-0.5 truncate text-sm text-muted-foreground">{subtitle}</p>
         )}
 
-        <div className="mt-3 space-y-4">
+        <div className="mt-3 space-y-5">
           {items.map(({ entry, profile }) => (
-            <div key={entry.id} className="space-y-2">
+            <div key={entry.id} className="space-y-3">
               <Byline entry={entry} profile={profile} mediaType={media.media_type} />
               {entry.review?.trim() && (
-                <p className="whitespace-pre-wrap wrap-break-word font-serif text-[15px] leading-relaxed text-foreground/75 sm:text-base">
+                <p className="whitespace-pre-wrap wrap-break-word text-[15px] leading-7 text-foreground/75 sm:text-base">
                   {entry.review}
                 </p>
               )}
