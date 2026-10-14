@@ -35,7 +35,7 @@ import type { OmniResult } from "@/lib/hooks/useOmniSearch";
 import { cn } from "@/lib/utils";
 import { usePageWidthClass } from "./PageShell";
 
-/** Collapsed to an icon; expands into the omni-search input while the other header actions hide. */
+/** Collapsed to an icon; expands into the omni-search input in the space before the header actions. */
 function HeaderSearch({
   open,
   onOpenChange,
@@ -270,13 +270,7 @@ export function Header() {
 
         <HeaderSearch open={searchOpen} onOpenChange={setSearchOpen} />
 
-        <div
-          inert={searchOpen}
-          className={cn(
-            "flex shrink-0 items-center gap-2 overflow-hidden transition-all duration-300 ease-out",
-            searchOpen ? "-ml-4 max-w-0 opacity-0" : "-ml-2 max-w-64 opacity-100"
-          )}
-        >
+        <div className="-ml-2 flex shrink-0 items-center gap-2">
           <Button
             variant="ghost"
             size="icon"
