@@ -3,12 +3,11 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { PageShell } from "@/components/layout/PageShell";
-import { BlendedMediaCard } from "@/components/media/BlendedMediaCard";
+import { FeedReviewRow } from "@/components/media/FeedReviewRow";
 import { useFeed } from "@/lib/hooks/useEntries";
-import type { Media, Entry, Profile, MediaType } from "@/types";
+import type { Media, Entry, Profile } from "@/types";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { formatDistanceToNow } from "date-fns";
 
 const filters = [
   { value: "all", label: "All", path: "/" },
@@ -28,66 +27,6 @@ const pathToFilter: Record<string, string> = {
   "/games": "game",
 };
 
-const typeLabels: Record<MediaType, string> = {
-  movie: "movie",
-  tv: "show",
-  book: "book",
-  record: "record",
-  game: "game",
-};
-
-const consumingVerbs: Record<MediaType, string> = {
-  movie: "is watching",
-  tv: "is watching",
-  book: "is reading",
-  record: "is listening to",
-  game: "is playing",
-};
-
-const completedVerbs: Record<MediaType, string> = {
-  movie: "watched",
-  tv: "watched",
-  book: "finished",
-  record: "listened to",
-  game: "played",
-};
-
-function getActionText(entry: Entry, media: Media, profile: Profile): string {
-  const name = profile.display_name;
-  const thing = typeLabels[media.media_type];
-
-  const isOwned = entry.ownership === "physical" || entry.ownership === "digital";
-
-  if (entry.status === "want" && isOwned) {
-    return `${name} added this ${thing} to their backlog`;
-  }
-  if (entry.status === "want") {
-    return `${name} wants this ${thing}`;
-  }
-  if (entry.status === "dnf") {
-    return `${name} did not finish this ${thing}`;
-  }
-  if (entry.status === "consuming") {
-    const verb = consumingVerbs[media.media_type];
-    return `${name} ${verb} this ${thing}`;
-  }
-  if (entry.ownership === "want_to_own") {
-    return `${name} wants to own this ${thing}`;
-  }
-  if (isOwned && entry.rating != null) {
-    return `${name} rated and owns this ${thing}`;
-  }
-  if (entry.rating != null) {
-    return `${name} rated this ${thing}`;
-  }
-  if (isOwned) {
-    return `${name} owns this ${thing}`;
-  }
-
-  const verb = completedVerbs[media.media_type];
-  return `${name} ${verb} this ${thing}`;
-}
-
 interface FeedEntry extends Entry {
   media: Media;
   profiles: Profile;
@@ -99,39 +38,12 @@ function feedTimeOf(entry: FeedEntry): number {
 
 function FeedGroup({ items }: { items: FeedEntry[] }) {
   const sorted = [...items].sort((a, b) => feedTimeOf(b) - feedTimeOf(a));
-  const latest = sorted[0]!;
-  const media = latest.media;
-  const profile = latest.profiles;
-
-  const timeAgo = formatDistanceToNow(new Date(feedTimeOf(latest)), {
-    addSuffix: true,
-  });
-  const fullText = getActionText(latest, media, profile);
-  const restOfText = fullText.startsWith(profile.display_name)
-    ? fullText.slice(profile.display_name.length).trimStart()
-    : fullText;
-
   return (
-    <div className="w-full min-w-0">
-      <div className="mb-2 flex min-w-0 items-center gap-2">
-        <p className="min-w-0 flex-1 truncate text-sm text-foreground">
-          <Link
-            to={`/profile/${profile.id}`}
-            className="font-medium hover:underline underline-offset-2"
-          >
-            {profile.display_name}
-          </Link>{" "}
-          {restOfText}
-        </p>
-        <span className="shrink-0 text-xs text-muted-foreground">{timeAgo}</span>
-      </div>
-
-      <BlendedMediaCard
-        media={media}
-        items={sorted.map((e) => ({ entry: e, profile: e.profiles }))}
-        showReviews
-      />
-    </div>
+    <FeedReviewRow
+      media={sorted[0]!.media}
+      items={sorted.map((e) => ({ entry: e, profile: e.profiles }))}
+      updatedAt={new Date(feedTimeOf(sorted[0]!))}
+    />
   );
 }
 
@@ -168,7 +80,7 @@ export function HomePage() {
   }, [entries]);
 
   return (
-    <PageShell>
+    <PageShell className="max-w-3xl">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Activity</h1>
@@ -194,9 +106,9 @@ export function HomePage() {
           <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
         </div>
       ) : groupedFeed.length > 0 ? (
-        <div className="flex flex-col divide-y divide-border/50">
+        <div className="flex flex-col divide-y divide-border/60">
           {groupedFeed.map((group) => (
-            <div key={group[0]!.media.id} className="py-4 first:pt-0">
+            <div key={group[0]!.media.id} className="py-6 first:pt-0">
               <FeedGroup items={group} />
             </div>
           ))}

@@ -13,6 +13,28 @@ const sizes = {
   lg: "h-6 w-6",
 };
 
+/** Read-only rating as filled glyphs only (★★★½), for compact bylines. */
+export function RatingGlyphs({
+  rating,
+  className,
+}: {
+  rating: number;
+  className?: string;
+}) {
+  const full = Math.floor(rating);
+  const half = rating - full >= 0.5;
+  return (
+    <span
+      className={cn("leading-none tracking-tight text-primary", className)}
+      role="img"
+      aria-label={`${rating} out of 5 stars`}
+    >
+      {"★".repeat(full)}
+      {half && "½"}
+    </span>
+  );
+}
+
 export function RatingStars({
   rating,
   onChange,
