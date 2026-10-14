@@ -253,14 +253,16 @@ export function useCollection(filters: CollectionFilters) {
   return useQuery({
     queryKey: ["entries", "collection", filters],
     queryFn: async () => {
-      const useInner =
-        filters.mediaType && filters.mediaType !== "all";
+      const byType = !!filters.mediaType && filters.mediaType !== "all";
+      // Records have no consumption status, so they never count as completed.
+      const completedView = filters.view === "completed";
+      const useInner = byType || completedView;
 
       let query = supabase
         .from("entries")
         .select(entrySelect({ innerMedia: !!useInner }));
 
-      if (useInner) {
+      if (byType) {
         query = query.eq("media.media_type", filters.mediaType);
       }
       if (filters.userId) {
@@ -272,8 +274,10 @@ export function useCollection(filters: CollectionFilters) {
         query = query.eq("status", "want");
       } else if (filters.view === "wishlist") {
         query = query.eq("ownership", "want_to_own");
-      } else if (filters.view === "completed") {
-        query = query.eq("status", "completed");
+      } else if (completedView) {
+        query = query
+          .neq("media.media_type", "record")
+          .or("status.eq.completed,and(review.not.is.null,review.neq.)");
       }
       if (filters.status && filters.status !== "all") {
         query = query.eq("status", filters.status);
