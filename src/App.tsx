@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { isSupabaseConfigured } from "@/lib/supabase";
 import { AuthProvider, useAuth } from "@/lib/hooks/useAuth";
 import { Header } from "@/components/layout/Header";
+import { PageWidthProvider } from "@/components/layout/PageShell";
 import { LoginPage } from "@/pages/Login";
 import { HomePage } from "@/pages/Home";
 import { SearchPage } from "@/pages/Search";
@@ -281,7 +282,9 @@ export default function App() {
       <BrowserRouter>
         <TooltipProvider>
           <AuthProvider>
-            <AppRoutes />
+            <PageWidthProvider>
+              <AppRoutes />
+            </PageWidthProvider>
           </AuthProvider>
         </TooltipProvider>
       </BrowserRouter>

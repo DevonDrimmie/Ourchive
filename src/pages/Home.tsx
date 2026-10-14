@@ -80,7 +80,7 @@ export function HomePage() {
   }, [entries]);
 
   return (
-    <PageShell className="max-w-3xl">
+    <PageShell width="feed">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Activity</h1>

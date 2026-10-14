@@ -31,6 +31,7 @@ import { useOmniSearch } from "@/lib/hooks/useOmniSearch";
 import type { OmniResult } from "@/lib/hooks/useOmniSearch";
 import type { EntryStatus } from "@/types";
 import { cn } from "@/lib/utils";
+import { usePageWidthClass } from "./PageShell";
 import { getMediaSubtitle } from "@/lib/media";
 import { MEDIA_TYPE_ICONS } from "@/components/media/mediaTypeIcons";
 
@@ -251,6 +252,7 @@ export function Header() {
   const { user, profile, signOut } = useAuth();
   const navigate = useNavigate();
   const [changePasswordOpen, setChangePasswordOpen] = useState(false);
+  const pageWidthClass = usePageWidthClass();
   const initials = profile?.display_name
     ?.split(" ")
     .map((n) => n[0])
@@ -260,7 +262,7 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-xl">
-      <div className="mx-auto flex h-14 max-w-5xl items-center gap-4 px-4">
+      <div className={cn("mx-auto flex h-14 items-center gap-4 px-4", pageWidthClass)}>
         <div className="flex items-center gap-2 shrink-0">
           <Link
             to="/"

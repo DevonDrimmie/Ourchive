@@ -102,7 +102,7 @@ export function ProfilePage() {
   };
 
   return (
-    <PageShell className="max-w-2xl">
+    <PageShell width="narrow">
       <div className="flex items-center gap-4">
         <button
           onClick={isOwner ? openAvatarDialog : undefined}

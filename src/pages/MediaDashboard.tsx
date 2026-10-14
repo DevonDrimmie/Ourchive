@@ -91,7 +91,7 @@ export function MediaDashboardPage() {
   );
 
   return (
-    <PageShell className="max-w-2xl">
+    <PageShell width="narrow">
       <div className="flex items-center gap-4">
         <Link to={`/profile/${id}`}>
           <Avatar className="h-16 w-16 hover:opacity-80 transition-opacity">
